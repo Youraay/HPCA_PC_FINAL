@@ -128,10 +128,10 @@ void World::evolve() {
 void World::randomize() {
   // Copy the current state of the world
   World world_copy(*this);
+  // seed random number generator with current time
+  srand(time(0));
   while (are_worlds_identical(grid, world_copy.grid))
   {
-    // seed random number generator with current time
-  srand(time(0));
 
   // random starting cell for pattern
   int x = rand() % this->width;
