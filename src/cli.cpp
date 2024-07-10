@@ -1,5 +1,4 @@
 #include "cli.h"
-#include "World.h"
 #include <iostream>
 #include <thread>
 #include <sstream>

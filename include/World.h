@@ -1,18 +1,18 @@
 #ifndef WORLD_H
 #define WORLD_H
 
-#include <vector>
-#include <string>
+#include "OpenCLWrapper.h"
 
 class World {
 private:
     int height; // Height in cells.
     int width; // Width in cells.
     long int generation; // Generation of the Game of Life.
-    std::vector<bool> cell_states; // Alive = 1, Dead = 0
-    std::vector<std::vector<int> > grid; // 2-dimensional Grid of Cells
+    int* grid; // 2-dimensional Grid of Cells, Alive = 1, Dead = 0
+    OpenCLWrapper cl;
 
     friend class CommandLineInterface;
+    friend class OpenCLWrapper;
 
     /**
      * @brief Calculates a new generation of the world/grid to simulate an evolution of the cells.
@@ -73,8 +73,7 @@ public:
      *  
      *  @return True or false, depending on whether they are identical.
     */
-    bool are_worlds_identical(const std::vector<std::vector<int> >& grid_1,
-                              const std::vector<std::vector<int> >& grid_2);
+    bool are_worlds_identical(int* grid_1, int* grid_2);
 
     /**
      * @brief  Get a cell state given a two-dimensional grid position (x, y).

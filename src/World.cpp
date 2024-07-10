@@ -1,21 +1,27 @@
 #include "World.h"
+
 #include <iostream>
 #include <ostream>
 #include <stdexcept>
-
 #include <fstream>
 #include <sstream>
 #include <filesystem>
 #include <string>
 #include <vector>
+#include <chrono>
+
+/*
+* To compile your source code, please use the following command to link the OpenCL library: 
+* g++ MatMul.cpp -o MatMul -O3 -fopenmp -fno-tree-vectorize -I/usr/include/gegl-0.4 -I~/Vc/include -L~/Vc/lib ~/Vc/lib/libVc.a -L/usr/lib64 /usr/lib64/libOpenCL.so.1
+*/
 
 // Constructor for World with given height or width
 World::World(int height, int width) {
   this->height = height;
   this->width = width;
   this->generation = 0;
-  this->cell_states.resize(height * width);
-  this->grid.resize(height, std::vector<int>(width, 0));
+  this->grid = new int[height * width];
+  this->cl = OpenCLWrapper(*this);
 }
 
 /* Constructor for World with given file, including height, width
@@ -62,15 +68,18 @@ World::World(std::string &file_name) {
   this->height = height;
   this->width = width;
   this->generation = 0;
-  this->cell_states.resize(height * width);
-  this->grid.resize(height, std::vector<int>(width, 0));
+  this->grid = new int[height * width];
+  this->cl = OpenCLWrapper(*this);
 
   // Set cell states.
   for (int i = 0; i < startPositions.size(); i++) {
     std::pair<int, int> pos = startPositions.at(i);
     this->set_cell_state(true, pos.second, pos.first);
   }
+
+
 }
+
 
 void World::save_gamestate(std::string file_name) {
   file_name = "configurations/" + file_name + ".txt";
@@ -100,24 +109,18 @@ void World::save_gamestate(std::string file_name) {
 
 void World::evolve() {
   // Declare new grid
-  std::vector<std::vector<int>> newGrid(this->height, std::vector<int>(this->width, 0));
+  int* newGrid = new int[this->height * this->width];
 
   /* Go through all cells in the current grid and determine whether they:
   1. Die, as if by underpopulation or overpopulation
   2. Continue living on to the next generation
   3. Come to life, as if by reproduction */
-  for (int y = 0; y < this->height; y++) {
-    for (int x = 0; x < this->width; x++) {
-      int determinationValue = calcDeterminationValue(y, x);
-      if (determinationValue == 2) {
-        newGrid[y][x] = this->grid[y][x];
-      } else if (determinationValue == 3) {
-        newGrid[y][x] = 1;
-      } else {
-        newGrid[y][x] = 0;
-      }
-    }
-  }
+  cl.err = clEnqueueNDRangeKernel(cl.queue, cl.kernel, 2, NULL, cl.global_work_size, NULL, 0, NULL, NULL);
+  cl.checkError(cl.err, "clEnqueueNDRangeKernel");
+
+  cl.err = clEnqueueReadBuffer(cl.queue, cl.buffer_newGrid, CL_TRUE, 0, sizeof(int) * this->height * this->width, newGrid, 0, NULL, NULL);
+  cl.checkError(cl.err, "clEnqueueReadBuffer");
+
   // Overwrite old with new grid and increment generation counter
   this->generation += 1;
   this->grid = newGrid;
@@ -142,32 +145,12 @@ bool World::is_stable() {
   return true;
 }
 
-int World::calcDeterminationValue(int y, int x) {
-  // Variable for counting all living neighbors
-  int determinationValue = 0;
-  // Go through all adjacent cells and add them up
-  for (int dy = -1; dy <= 1; dy++) {
-    for (int dx = -1; dx <=1; dx++) {
-      if (dx == 0 && dy ==0) continue;
-
-      int sx = (x+ dx+ this->width) % this->width;
-      int sy = (y+ dy+ this->height) % this->height;
-
-      determinationValue += this->grid[sy][sx];
-    }
-  }
-  // Return the number of living neighbors of a given cell.
-  // (e.g. 2 neighbors = 7*0 + 2*1)
-  return determinationValue;
-}
-
-bool World::are_worlds_identical(const std::vector<std::vector<int>>& grid_1,
-                                 const std::vector<std::vector<int>>& grid_2) {
+bool World::are_worlds_identical(int* grid_1, int* grid_2) {
   // Compare each cell in both worlds
   for (int i = 0; i < height; i++) {
     for (int j = 0; j < width; j++) {
       // return false, if any cell is different
-      if (grid_1[i][j] != grid_2[i][j]) {
+      if (grid_1[i * width + j] != grid_2[i * width + j]) {
         return false;
       }
     }
@@ -179,7 +162,7 @@ bool World::are_worlds_identical(const std::vector<std::vector<int>>& grid_1,
 int World::get_cell_state(int y, int x) {
   // Return cell state, if coordinates are valid
   if (x >= 0 && x < width && y >= 0 && y < height) {
-    return grid[y][x] ? 1 : 0;
+    return grid[y * width + x] ? 1 : 0;
   }
   // Return -1 and print error message, if coordinates are invalid
   else {
@@ -188,16 +171,16 @@ int World::get_cell_state(int y, int x) {
   }
 }
 
-int World:: get_cell_state(int p) {
+int World::get_cell_state(int p) {
   // Determine 2d coordinates from point and return cell state, if point is valid
-  if ((this->height * this-> width) >= p) {
+  if ((this->height * this->width) >= p) {
     int y = p / this->width;
     int x = p % this->width;
-    return grid[y][x] ? 1 : 0;
+    return grid[y * width + x] ? 1 : 0;
   }
-  // Return -1 and print error message, if if point is invalid
+  // Return -1 and print error message, if point is invalid
   else {
-    std::cerr << "Point" << p << "is out of range." << std::endl;
+    std::cerr << "Point " << p << " is out of range." << std::endl;
     return -1;
   }
 }
@@ -205,38 +188,41 @@ int World:: get_cell_state(int p) {
 void World::set_cell_state(int state, int y, int x) {
   // Set the cell state, if coordinates are valid
   if (x >= 0 && x < width && y >= 0 && y < height) {
-    this->grid[y][x] = state;
+    this->grid[y * width + x] = state;
   }
   // Print error message, if coordinates are invalid
   else {
     std::cerr << "Invalid coordinates: (" << x << ", " << y << ")" << std::endl;
   }
-};
+}
 
 void World::set_cell_state(int state, int p) {
-  bool succ = true; // Who is bro succing 🤨?
   int cell_count = this->height * this->width;
   // Determine 2d coordinates from point and set cell state, if point is valid
   if (cell_count >= p) {
     int y = p / this->width;
     int x = p % this->width;
-    this->grid[y][x] = state;
-    // Print error message, if point is invalid
-  } else {
-    std::cerr << "Point" << p << "is out of range." << std::endl;
+    this->grid[y * width + x] = state;
+  }
+  // Print error message, if point is invalid
+  else {
+    std::cerr << "Point " << p << " is out of range." << std::endl;
   }
 }
+
+// The rest of the methods can be modified in a similar way.
+
 
 void World::add_beacon(int y, int x) {
   // Add beacon pattern, if coordinates are in bounds
   if (x >= 0 && y >= 0 && x+3 < width && y+3 < height) {
-    this->grid[y][x] = 1;
-    this->grid[y+1][x] = 1;
-    this->grid[y][x+1] = 1;
+    this->grid[y * width + x] = 1;
+    this->grid[(y+1) * width + x] = 1;
+    this->grid[y * width + x+1] = 1;
 
-    this->grid[y+3][x+3] = 1;
-    this->grid[y+3][x+2] = 1;
-    this->grid[y+2][x+3] = 1;
+    this->grid[(y+3) * width + x+3] = 1;
+    this->grid[(y+3) * width + x+2] = 1;
+    this->grid[(y+2) * width + x+3] = 1;
   }
   // Print error message if coordinates are out of bounds
   else {
@@ -247,12 +233,12 @@ void World::add_beacon(int y, int x) {
 void World::add_glider(int y, int x) {
   // Add glider pattern, if coordinates are in bounds
   if (x >= 0 && y >= 0 && x+3 < width && y+3 < height) {
-    this->grid[y][x+1] = 1;
-    this->grid[y+1][x+2] = 1;
+    this->grid[y * width + x+1] = 1;
+    this->grid[(y+1) * width + x+2] = 1;
 
-    this->grid[y+2][x] = 1;
-    this->grid[y+2][x+1] = 1;
-    this->grid[y+2][x+2] = 1;
+    this->grid[(y+2) * width + x] = 1;
+    this->grid[(y+2) * width + x+1] = 1;
+    this->grid[(y+2) * width + x+2] = 1;
   }
   // Print error message if coordinates are out of bounds
   else {
@@ -263,11 +249,11 @@ void World::add_glider(int y, int x) {
 void World::add_methuselah(int y, int x) {
   // Add methuselah pattern, if coordinates are in bounds
   if (x >= 0 && y >= 0 && x+2 < width && y+2 < height) {
-    this->grid[y][x+1] = 1;
-    this->grid[y][x+2] = 1;
-    this->grid[y+1][x] = 1;
-    this->grid[y+1][x+1] = 1;
-    this->grid[y+2][x+1] = 1;
+    this->grid[y * width + x+1] = 1;
+    this->grid[y * width + x+2] = 1;
+    this->grid[(y+1) * width + x] = 1;
+    this->grid[(y+1) * width + x+1] = 1;
+    this->grid[(y+2) * width + x+1] = 1;
   }
   // Print error message if coordinates are out of bounds
   else {
@@ -278,12 +264,12 @@ void World::add_methuselah(int y, int x) {
 void World::add_toad(int y, int x) {
   // Add toad pattern, if coordinates are in bounds
   if (x >= 0 && y >= 0 && x+3 < width && y+3 < height) {
-    this->grid[y][x+2] = 1;
-    this->grid[y+1][x] = 1;
-    this->grid[y+2][x] = 1;
-    this->grid[y+1][x+3] = 1;
-    this->grid[y+2][x+3] = 1;
-    this->grid[y+3][x+1] = 1;
+    this->grid[y * width + x+2] = 1;
+    this->grid[(y+1) * width + x] = 1;
+    this->grid[(y+2) * width + x] = 1;
+    this->grid[(y+1) * width + x+3] = 1;
+    this->grid[(y+2) * width + x+3] = 1;
+    this->grid[(y+3) * width + x+1] = 1;
   }
   // Print error message if coordinates are out of bounds
   else {
@@ -292,20 +278,21 @@ void World::add_toad(int y, int x) {
 }
 
 void World::print() {
-  for (auto & i : grid) {
-    for (int j : i) {
-      if (j) {
+  for (int i = 0; i < height; i++) {
+    for (int j = 0; j < width; j++) {
+      if (grid[i * width + j]) {
         std::cout << "\033[32mx\033[0m" << " ";
       } else {
         std::cout << "\033[90mo\033[0m" << " ";
       }
-
     }
     std::cout << std::endl;
   }
 }
 
 long World::getGeneration() {
-  return this-> generation;
+  return this->generation;
 }
+
+
 

@@ -1,6 +1,11 @@
+#ifndef CLI_H
+#define CLI_H
+
 #include <string>
 #include <vector>
 #include <atomic>
+
+#include "World.h"
 
 class CommandLineInterface {
 private:
@@ -34,3 +39,5 @@ public:
     //  bool hide_progress();
     //  bool set_visualisation_delay(); <= Wird das nicht bereits durch this->ms gemacht?
 };
+
+#endif // CLI_H
