@@ -11,6 +11,7 @@ private:
     long int generation; // Generation of the Game of Life.
     std::vector<bool> cell_states; // Alive = 1, Dead = 0
     std::vector<std::vector<int> > grid; // 2-dimensional Grid of Cells
+    std::vector<char> patterns; // list of patterns, instertable into the world
 
     friend class CommandLineInterface;
 
@@ -19,6 +20,12 @@ private:
      * The rules are from the wikipedia article.
     */
     void evolve();
+
+    /**
+     * @brief Create a random pattern in a random location (cell) of the world.
+     * The starting position i.e. the chosen cell will be the bottom left corner of the generated cell.
+     */
+    void randomize();
 
     /**
      * @brief Checks whether the world is stable.

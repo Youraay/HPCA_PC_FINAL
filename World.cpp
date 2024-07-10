@@ -16,6 +16,7 @@ World::World(int height, int width) {
   this->generation = 0;
   this->cell_states.resize(height * width);
   this->grid.resize(height, std::vector<int>(width, 0));
+  this->patterns = {'b', 'g', 'm', 't'};
 }
 
 /* Constructor for World with given file, including height, width
@@ -64,6 +65,7 @@ World::World(std::string &file_name) {
   this->generation = 0;
   this->cell_states.resize(height * width);
   this->grid.resize(height, std::vector<int>(width, 0));
+  this->patterns = {'b', 'g', 'm', 't'};
 
   // Set cell states.
   for (int i = 0; i < startPositions.size(); i++) {
@@ -121,6 +123,44 @@ void World::evolve() {
   // Overwrite old with new grid and increment generation counter
   this->generation += 1;
   this->grid = newGrid;
+}
+
+void World::randomize() {
+  // Copy the current state of the world
+  World world_copy(*this);
+  while (are_worlds_identical(grid, world_copy.grid))
+  {
+    // seed random number generator with current time
+  srand(time(0));
+
+  // random starting cell for pattern
+  int x = rand() % this->width;
+  int y = rand() % this->height;
+
+  // random pattern among the ones implemented
+  int patternIndex = rand() % this->patterns.size();
+
+  char pattern = this->patterns[patternIndex];
+
+  switch (pattern)
+  {
+  case 'b':
+    add_beacon(y, x);
+    break;
+  case 'g':
+    add_glider(y, x);
+    break;
+  case 'm':
+    add_methuselah(y, x);
+    break;
+  case 't':
+    add_toad(y, x);
+    break;
+  
+  default:
+    break;
+  }
+  }
 }
 
 bool World::is_stable() {
@@ -238,10 +278,6 @@ void World::add_beacon(int y, int x) {
     this->grid[y+3][x+2] = 1;
     this->grid[y+2][x+3] = 1;
   }
-  // Print error message if coordinates are out of bounds
-  else {
-    std::cerr << "Invalid coordinates to spawn beacon in." << std::endl;
-  }
 }
 
 void World::add_glider(int y, int x) {
@@ -254,10 +290,6 @@ void World::add_glider(int y, int x) {
     this->grid[y+2][x+1] = 1;
     this->grid[y+2][x+2] = 1;
   }
-  // Print error message if coordinates are out of bounds
-  else {
-    std::cerr << "Invalid coordinates to spawn glider in." << std::endl;
-  }
 }
 
 void World::add_methuselah(int y, int x) {
@@ -268,10 +300,6 @@ void World::add_methuselah(int y, int x) {
     this->grid[y+1][x] = 1;
     this->grid[y+1][x+1] = 1;
     this->grid[y+2][x+1] = 1;
-  }
-  // Print error message if coordinates are out of bounds
-  else {
-    std::cerr << "Invalid coordinates to spawn methuselah in." << std::endl;
   }
 }
 
@@ -284,10 +312,6 @@ void World::add_toad(int y, int x) {
     this->grid[y+1][x+3] = 1;
     this->grid[y+2][x+3] = 1;
     this->grid[y+3][x+1] = 1;
-  }
-  // Print error message if coordinates are out of bounds
-  else {
-    std::cerr << "Invalid coordinates to spawn toad in." << std::endl;
   }
 }
 
