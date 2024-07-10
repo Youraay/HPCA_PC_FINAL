@@ -1,3 +1,0 @@
-/home/bartek/source files/.c/(LINUX) HLRA-Praktikum/HLRA-Praktikum-Exercise-2-/build/CMakeFiles/GameOfLife.dir
-/home/bartek/source files/.c/(LINUX) HLRA-Praktikum/HLRA-Praktikum-Exercise-2-/build/CMakeFiles/edit_cache.dir
-/home/bartek/source files/.c/(LINUX) HLRA-Praktikum/HLRA-Praktikum-Exercise-2-/build/CMakeFiles/rebuild_cache.dir
