@@ -97,6 +97,7 @@ void CommandLineInterface::addMenu() {
         std::cout << "(g)lider (x,y)" << std::endl;
         std::cout << "(t)oad (x,y)" << std::endl;
         std::cout << "(m)ethuselah (x,y)" << std::endl;
+        std::cout << "(r)andom pattern" << std::endl;
         std::cout << "(q)uit (go back to main menu)" << std::endl;
 
         std::string input;
@@ -159,6 +160,9 @@ void CommandLineInterface::addMenu() {
                 if (x != -1 && y != -1) {
                     this->world->add_methuselah(y, x);
                 }
+                break;
+            case 'r':
+                this->world->randomize();
                 break;
             case 'q':
                 run = false;
