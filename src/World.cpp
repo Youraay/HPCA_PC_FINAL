@@ -19,6 +19,7 @@
 World::World(int height, int width) {
   this->height = height;
   this->width = width;
+  this->N = this->height * this->width;
   this->generation = 0;
   this->grid = new int[height * width];
   std::fill_n(this->grid, this->height * this->width, 0);
@@ -68,6 +69,7 @@ World::World(std::string &file_name) {
     }
   }
 
+  this->N = this->height * this->width;
   this->generation = 0;
   this->grid = new int[this->height * this->width];
   std::fill_n(this->grid, this->height * this->width, 0);
@@ -128,18 +130,18 @@ int* World::evolve() {
   *  3. Come to life, as if by reproduction 
   */
   // Declare new grid
-  int N = this->height * this->width;
-  int* newGrid = new int[N];
+  int* newGrid = new int[this->N];
 
   // Create new buffer using the current grid.
-  cl->buffer_grid = clCreateBuffer(cl->context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(int) * N, grid, &cl->err);
+  cl_mem buffer_grid = clCreateBuffer(cl->context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(int) * this->N, grid, &cl->err);
   cl->checkError(cl->err, "clCreateBuffer (buffer_grid)");
   // Set that new buffer as the first argument of the kernel (evolve) function.
-  cl->err = clSetKernelArg(cl->kernel, 0, sizeof(cl_mem), &cl->buffer_grid);
+  cl->err = clSetKernelArg(cl->kernel_evolve, 0, sizeof(cl_mem), &buffer_grid);
   cl->checkError(cl->err, "clSetKernelArg (buffer_grid)");
   
+  
   // Run the kernel (evolve) function using the GPU.
-  cl->err = clEnqueueNDRangeKernel(cl->queue, cl->kernel, 2, NULL, cl->global_work_size, NULL, 0, NULL, NULL);
+  cl->err = clEnqueueNDRangeKernel(cl->queue, cl->kernel_evolve, 2, NULL, cl->evolve_global_work_size, NULL, 0, NULL, NULL);
   cl->checkError(cl->err, "clEnqueueNDRangeKernel");
   // Read the resulting new grid from the buffer into host memory (newGrid).
   cl->err = clEnqueueReadBuffer(cl->queue, cl->buffer_newGrid, CL_TRUE, 0, sizeof(int) * this->height * this->width, newGrid, 0, NULL, NULL);
@@ -147,6 +149,7 @@ int* World::evolve() {
 
   // Overwrite old with new grid and increment generation counter.
   if (memory_safety) delete[] this->grid;
+  clReleaseMemObject(buffer_grid);
   this->grid = newGrid;
   this->generation++;
 
@@ -192,23 +195,47 @@ void World::randomize() {
 }
 
 bool World::are_worlds_identical(int* grid_1, int* grid_2) {
-  // Compare each cell in both worlds
-  for (int i = 0; i < height; i++) {
-    for (int j = 0; j < width; j++) {
-      // return false, if any cell is different
-      if (grid_1[i * width + j] != grid_2[i * width + j]) {
-        return false;
-      }
-    }
-  }
-  // return true, if all the cells are the same
-  return true;
+  int host_result = CL_TRUE;
+
+  // Create new buffer for grid1.
+  cl_mem buffer_grid1 = clCreateBuffer(cl->context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, 
+                                      sizeof(int) * this->N, grid_1, &cl->err);
+  cl->checkError(cl->err, "clCreateBuffer (buffer_grid1)");
+  // Create new buffer for grid2.
+  cl_mem buffer_grid2 = clCreateBuffer(cl->context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, 
+                                      sizeof(int) * this->N, grid_2, &cl->err);
+  cl->checkError(cl->err, "clCreateBuffer (buffer_grid2)");
+  // Create a buffer for 'result'
+  cl_mem buffer_result = clCreateBuffer(cl->context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, 
+                                       sizeof(int), &host_result, &cl->err);
+  cl->checkError(cl->err, "clCreateBuffer (buffer_result)");
+
+  // Set the arguments for the kernel function (compare_arrays).
+  cl->err = clSetKernelArg(cl->kernel_compare, 0, sizeof(cl_mem), &buffer_grid1);
+  cl->checkError(cl->err, "clSetKernelArg (buffer_grid1)");
+  cl->err = clSetKernelArg(cl->kernel_compare, 1, sizeof(cl_mem), &buffer_grid2);
+  cl->checkError(cl->err, "clSetKernelArg (buffer_grid2)");
+  cl->err = clSetKernelArg(cl->kernel_compare, 2, sizeof(cl_mem), &buffer_result);
+  cl->checkError(cl->err, "clSetKernelArg (result)");
+
+  // Run the kernel (compare_arrays) function using the GPU.
+  cl->err = clEnqueueNDRangeKernel(cl->queue, cl->kernel_compare, 1, NULL, cl->compare_global_work_size, NULL, 0, NULL, NULL);
+  cl->checkError(cl->err, "clEnqueueNDRangeKernel");
+  // Read the result (whether they are equal or not) from the buffer into host memory (host_result).
+  cl->err = clEnqueueReadBuffer(cl->queue, buffer_result, CL_TRUE, 0, sizeof(int), &host_result, 0, NULL, NULL);
+  cl->checkError(cl->err, "clEnqueueReadBuffer");
+
+  clReleaseMemObject(buffer_grid1);
+  clReleaseMemObject(buffer_grid2);
+  clReleaseMemObject(buffer_result);
+
+  return (bool)host_result;
 }
 
 int World::get_cell_state(int y, int x) {
   // Return cell state, if coordinates are valid
   if (x >= 0 && x < width && y >= 0 && y < height) {
-    return grid[y * width + x] ? 1 : 0;
+    return grid[y * width + x];
   }
   // Return -1 and print error message, if coordinates are invalid
   else {
@@ -219,10 +246,8 @@ int World::get_cell_state(int y, int x) {
 
 int World::get_cell_state(int p) {
   // Determine 2d coordinates from point and return cell state, if point is valid
-  if ((this->height * this->width) >= p) {
-    int y = p / this->width;
-    int x = p % this->width;
-    return grid[y * width + x] ? 1 : 0;
+  if (this->N >= p) {
+    return grid[p];
   }
   // Return -1 and print error message, if point is invalid
   else {

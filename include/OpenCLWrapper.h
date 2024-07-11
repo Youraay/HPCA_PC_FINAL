@@ -19,10 +19,11 @@ public:
     cl_platform_id platform;
     cl_uint deviceCount;
     cl_command_queue queue;
-    cl_kernel kernel;
-    cl_mem buffer_grid;
+    cl_kernel kernel_evolve;
+    cl_kernel kernel_compare;
     cl_mem buffer_newGrid;
-    size_t global_work_size[2];
+    size_t evolve_global_work_size[2];
+    size_t compare_global_work_size[1];
 
     cl_program program;
     cl_context context;

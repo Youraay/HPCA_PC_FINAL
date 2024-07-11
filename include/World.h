@@ -8,6 +8,7 @@ class World {
 private:
     int height; // Height in cells.
     int width; // Width in cells.
+    ulong N; // Total number of cells (Height * Width).
     long int generation; // Generation of the Game of Life.
     int* grid; // 2-dimensional Grid of Cells, Alive = 1, Dead = 0
     OpenCLWrapper* cl;

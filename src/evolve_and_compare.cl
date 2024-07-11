@@ -1,4 +1,4 @@
-int calcDeterminationValue(__global int* grid, int x, int y, int width, int height) {
+int calcDeterminationValue(__global const int* grid, int x, int y, int width, int height) {
   int determinationValue = 0;
 
   for (int dy = -1; dy <= 1; dy++) {
@@ -31,4 +31,14 @@ __kernel void evolve(__global const int* grid,
   } else {
     newGrid[y * width + x] = 0;
   }
+}
+
+
+__kernel void compare_arrays(__global const int* array1, __global const int* array2, __global int* result, ulong size) {
+    int index = get_global_id(0);
+    if (index < size) {
+        if (array1[index] != array2[index]) {
+            *result = false;
+        }
+    }
 }
