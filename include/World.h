@@ -31,14 +31,6 @@ private:
      */
     void randomize();
 
-    /**
-     * @brief Checks whether the world is stable.
-     * 
-     * @returns True if the world is stable.
-     * False if there are oscillators of periods higher than 2 or spaceships a.k.a. the world is unstable
-    */
-    bool is_stable();
-
 public:
     /**
      * @brief Construct a new World object given height and width.
