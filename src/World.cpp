@@ -188,8 +188,8 @@ void World::randomize() {
     break;
   }
 }
-
-bool World::are_worlds_identical(int* grid_1, int* grid_2) {
+/*
+bool World::are_worlds_identical2(int* grid_1, int* grid_2) {
   int host_result = CL_TRUE;
 
   // Create new buffer for grid1.
@@ -225,6 +225,20 @@ bool World::are_worlds_identical(int* grid_1, int* grid_2) {
   clReleaseMemObject(buffer_result);
 
   return (bool)host_result;
+}
+*/
+bool World::are_worlds_identical(int* grid_1, int* grid_2) {
+  // Compare each cell in both worlds
+  for (int i = 0; i < height; i++) {
+    for (int j = 0; j < width; j++) {
+      // return false, if any cell is different
+      if (grid_1[j * width + i] != grid_2[j * width + i]) {
+        return false;
+      }
+    }
+  }
+  // return true, if all the cells are the same
+  return true;
 }
 
 int World::get_cell_state(int y, int x) {
