@@ -21,6 +21,7 @@ World::World(int height, int width) {
   this->width = width;
   this->generation = 0;
   this->grid = new int[height * width];
+  std::fill_n(this->grid, this->height * this->width, 0);
   this->cl = NULL;
   this->patterns = {'b', 'g', 'm', 't'};
   std::cout << "WORLD CREATED." << std::endl;
@@ -45,9 +46,9 @@ World::World(std::string &file_name) {
         if (iss >> key >> equalsign) {
           // Parse height and width.
           if (key == "height") {
-            iss >> height;
+            iss >> this->height;
           } else if (key == "width") {
-            iss >> width;
+            iss >> this->width;
           } else if (key == "start") {
             // Parse start positions
             char nan;
@@ -67,18 +68,18 @@ World::World(std::string &file_name) {
     }
   }
 
-  this->height = height;
-  this->width = width;
   this->generation = 0;
-  this->grid = new int[height * width];
+  this->grid = new int[this->height * this->width];
+  std::fill_n(this->grid, this->height * this->width, 0);
   this->cl = NULL;
   this->patterns = {'b', 'g', 'm', 't'};
 
   // Set cell states.
-  for (int i = 0; i < startPositions.size(); i++) {
+  for (size_t i = 0; i < startPositions.size(); i++) {
     std::pair<int, int> pos = startPositions.at(i);
     this->set_cell_state(true, pos.second, pos.first);
   }
+
   std::cout << "WORLD CREATED." << std::endl;
 }
 
@@ -243,11 +244,8 @@ void World::set_cell_state(int state, int y, int x) {
 
 void World::set_cell_state(int state, int p) {
   int cell_count = this->height * this->width;
-  // Determine 2d coordinates from point and set cell state, if point is valid
   if (cell_count >= p) {
-    int y = p / this->width;
-    int x = p % this->width;
-    this->grid[y * width + x] = state;
+    this->grid[p] = state;
   }
   // Print error message, if point is invalid
   else {
