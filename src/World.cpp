@@ -21,8 +21,9 @@ World::World(int height, int width) {
   this->width = width;
   this->generation = 0;
   this->grid = new int[height * width];
-  this->cl = OpenCLWrapper(*this);
+  this->cl = NULL;
   this->patterns = {'b', 'g', 'm', 't'};
+  std::cout << "WORLD CREATED." << std::endl;
 }
 
 /* Constructor for World with given file, including height, width
@@ -70,7 +71,7 @@ World::World(std::string &file_name) {
   this->width = width;
   this->generation = 0;
   this->grid = new int[height * width];
-  this->cl = OpenCLWrapper(*this);
+  this->cl = NULL;
   this->patterns = {'b', 'g', 'm', 't'};
 
   // Set cell states.
@@ -78,8 +79,17 @@ World::World(std::string &file_name) {
     std::pair<int, int> pos = startPositions.at(i);
     this->set_cell_state(true, pos.second, pos.first);
   }
+  std::cout << "WORLD CREATED." << std::endl;
+}
 
+World::~World() {
+  delete this->cl;
+  delete[] this->grid; 
+}
 
+void World::init_OpenCL() {
+  delete this->cl;
+  this->cl = new OpenCLWrapper(*this);
 }
 
 
@@ -110,22 +120,34 @@ void World::save_gamestate(std::string file_name) {
 }
 
 void World::evolve() {
+  /*
+  * Go through all cells in the current grid and determine whether they:
+  *  1. Die, as if by underpopulation or overpopulation
+  *  2. Continue living on to the next generation
+  *  3. Come to life, as if by reproduction 
+  */
   // Declare new grid
-  int* newGrid = new int[this->height * this->width];
+  int N = this->height * this->width;
+  int* newGrid = new int[N];
 
-  /* Go through all cells in the current grid and determine whether they:
-  1. Die, as if by underpopulation or overpopulation
-  2. Continue living on to the next generation
-  3. Come to life, as if by reproduction */
-  cl.err = clEnqueueNDRangeKernel(cl.queue, cl.kernel, 2, NULL, cl.global_work_size, NULL, 0, NULL, NULL);
-  cl.checkError(cl.err, "clEnqueueNDRangeKernel");
+  // Create new buffer using the current grid.
+  cl->buffer_grid = clCreateBuffer(cl->context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(int) * N, grid, &cl->err);
+  cl->checkError(cl->err, "clCreateBuffer (buffer_grid)");
+  // Set that new buffer as the first argument of the kernel (evolve) function.
+  cl->err = clSetKernelArg(cl->kernel, 0, sizeof(cl_mem), &cl->buffer_grid);
+  cl->checkError(cl->err, "clSetKernelArg (buffer_grid)");
+  
+  // Run the kernel (evolve) function using the GPU.
+  cl->err = clEnqueueNDRangeKernel(cl->queue, cl->kernel, 2, NULL, cl->global_work_size, NULL, 0, NULL, NULL);
+  cl->checkError(cl->err, "clEnqueueNDRangeKernel");
+  // Read the resulting new grid from the buffer into host memory (newGrid).
+  cl->err = clEnqueueReadBuffer(cl->queue, cl->buffer_newGrid, CL_TRUE, 0, sizeof(int) * this->height * this->width, newGrid, 0, NULL, NULL);
+  cl->checkError(cl->err, "clEnqueueReadBuffer");
 
-  cl.err = clEnqueueReadBuffer(cl.queue, cl.buffer_newGrid, CL_TRUE, 0, sizeof(int) * this->height * this->width, newGrid, 0, NULL, NULL);
-  cl.checkError(cl.err, "clEnqueueReadBuffer");
-
-  // Overwrite old with new grid and increment generation counter
-  this->generation += 1;
+  // Overwrite old with new grid and increment generation counter.
+  delete[] this->grid;
   this->grid = newGrid;
+  this->generation++;
 }
 
 void World::randomize() {
@@ -317,6 +339,7 @@ void World::print() {
 long World::getGeneration() {
   return this->generation;
 }
+
 
 
 

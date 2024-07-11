@@ -32,6 +32,8 @@ CommandLineInterface::CommandLineInterface(int argc, char **argv) {
 
 // Handling user input for Game control
 void CommandLineInterface::mainMenu() {
+    this->world->init_OpenCL();
+
     bool run = true;
     while (run) {
         std::cout << "\033[2J\033[H" << "Main Menu" << std::endl;

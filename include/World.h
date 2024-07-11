@@ -10,7 +10,7 @@ private:
     int width; // Width in cells.
     long int generation; // Generation of the Game of Life.
     int* grid; // 2-dimensional Grid of Cells, Alive = 1, Dead = 0
-    OpenCLWrapper cl;
+    OpenCLWrapper* cl;
     std::vector<char> patterns; // list of patterns, instertable into the world
 
     friend class CommandLineInterface;
@@ -55,6 +55,16 @@ public:
      * folder.
      */
     World(std::string &file_name);
+
+    /**
+     * @brief Destructor of the World object.
+     */
+    ~World();
+
+    /**
+     * @brief Initializes OpenCL using the OpenCLWrapper constructor and storing it in this->cl;
+     */
+    void init_OpenCL();
 
     /**
      * @brief  Save the current world to a file (dimensions and cell states).
