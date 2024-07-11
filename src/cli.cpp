@@ -6,7 +6,7 @@
 // Constructor for CommandLineInterface, handles command line Arguments
 CommandLineInterface::CommandLineInterface(int argc, char **argv) {
     this->print = true;
-    this->ms = 500;
+    this->delay_in_ms = 500;
     if (argc >= 2 && argc <= 3) {
         if (argc == 2) {
             std::cout << "Open File:" << argv[1] << std::endl;
@@ -201,7 +201,7 @@ void CommandLineInterface::autoPlay(std::atomic<bool> &run) {
         }
         std::cout << "(q)uit (go back to main menu)" << std::endl;
         // Delay.
-        std::this_thread::sleep_for(std::chrono::milliseconds(this->ms));
+        std::this_thread::sleep_for(std::chrono::milliseconds(delay_in_ms));
     }
 }
 
@@ -211,7 +211,7 @@ void CommandLineInterface::displayMenu() {
     while (run) {
         std::cout << "\033[2J\033[H" << "Main Menu" << std::endl;
         if(this->print) this->world->print();
-        std::cout << "current delay: " << this->ms << "\t|\tprint world update: " << this->print << std::endl;
+        std::cout << "current delay: " << delay_in_ms << "\t|\tprint world update: " << this->print << std::endl;
         std::cout << std::endl;
         std::cout << "(d)elay settings (int ms)" << std::endl;
         std::cout << "(p)print world update (y/n)" << std::endl;
@@ -241,7 +241,7 @@ void CommandLineInterface::displayMenu() {
         switch (objectType) {
             case 'd':
                 try {
-                    this->ms = std::stoi(arr);
+                    delay_in_ms = std::stoi(arr);
                 } catch (const std::invalid_argument& e) {
                     std::cerr << "Not a number" << std::endl;
                 } catch (const std::out_of_range& e) {
@@ -309,18 +309,38 @@ void CommandLineInterface::saveMenu() {
 
 long CommandLineInterface::calculate_processing_time(long generations) {
     long generations_done = 0;
+    bool old_equal_new = false;
+    bool is_stable = false;
+    bool is_maybe_stable = false;
+
+    // Disable automatic deletion of old grid after evolution
+    // - we use the old grid value before the evolution and delete it ourselves afterwards.
+    this->world->memory_safety = false;
 
     // Start the clock
     auto start = std::chrono::high_resolution_clock::now();
-    while (generations_done < generations) {
+    while (generations_done < generations && !is_stable) {
         std::cout << "\033[2J\033[H" 
-                  << "Running the evolution for additional " + std::to_string(generations) + " generations...\n";
-        this->world->evolve();
+                  << "Running the evolution for additional "
+                     + std::to_string(generations) + " generations...\n";
+        
+        int* oldGrid = this->world->grid;
+        old_equal_new = this->world->are_worlds_identical(oldGrid, this->world->evolve());
+        delete[] oldGrid;
         generations_done++;
+        if (old_equal_new && is_maybe_stable) {
+            is_stable = true;
+        } else if (old_equal_new && !is_maybe_stable) {
+            is_maybe_stable = true;
+        }
         if(this->print) this->world->print(); 
-        if(this->world->is_stable()) break; 
+        if(is_stable) {
+            std::cout << "Stability achieved after " << generations_done-2 
+                      << " generations. Ending the simulation." << std::endl; 
+        } 
+
         // Delay.
-        std::this_thread::sleep_for(std::chrono::milliseconds(this->ms));
+        std::this_thread::sleep_for(std::chrono::milliseconds(delay_in_ms));
     }
     // Stop the clock
     auto stop = std::chrono::high_resolution_clock::now();
@@ -328,9 +348,14 @@ long CommandLineInterface::calculate_processing_time(long generations) {
     // Calculate the duration
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
 
-    std::cout << "Time taken to run the evolution: " << duration.count() << " microseconds" << std::endl;
+    std::cout << "Time taken to run the evolutions: " 
+              << duration.count()
+              << " microseconds (mind the delay!)." << std::endl;
 
-    std::this_thread::sleep_for(std::chrono::seconds(2));
+    std::this_thread::sleep_for(std::chrono::seconds(5));
+
+    // To again automatically delete old grid after evolution.
+    this->world->memory_safety = true;
 
     return duration.count();
 }

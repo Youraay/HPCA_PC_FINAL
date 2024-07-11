@@ -11,7 +11,7 @@ class CommandLineInterface {
 private:
     World* world{};
     bool print;
-    int ms;
+    int delay_in_ms;
 public:
     CommandLineInterface(int argc, char** argv);
     //~CommandLineInterface();

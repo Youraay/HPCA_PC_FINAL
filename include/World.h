@@ -12,6 +12,7 @@ private:
     int* grid; // 2-dimensional Grid of Cells, Alive = 1, Dead = 0
     OpenCLWrapper* cl;
     std::vector<char> patterns; // list of patterns, instertable into the world
+    bool memory_safety = true;
 
     friend class CommandLineInterface;
     friend class OpenCLWrapper;
@@ -19,8 +20,10 @@ private:
     /**
      * @brief Calculates a new generation of the world/grid to simulate an evolution of the cells.
      * The rules are from the wikipedia article.
+     * 
+     * @returns The grid of the world after the evolution.
     */
-    void evolve();
+    int* evolve();
 
     /**
      * @brief Create a random pattern in a random location (cell) of the world.

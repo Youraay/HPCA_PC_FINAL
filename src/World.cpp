@@ -119,7 +119,7 @@ void World::save_gamestate(std::string file_name) {
   } 
 }
 
-void World::evolve() {
+int* World::evolve() {
   /*
   * Go through all cells in the current grid and determine whether they:
   *  1. Die, as if by underpopulation or overpopulation
@@ -145,9 +145,11 @@ void World::evolve() {
   cl->checkError(cl->err, "clEnqueueReadBuffer");
 
   // Overwrite old with new grid and increment generation counter.
-  delete[] this->grid;
+  if (memory_safety) delete[] this->grid;
   this->grid = newGrid;
   this->generation++;
+
+  return this->grid;
 }
 
 void World::randomize() {
@@ -186,25 +188,6 @@ void World::randomize() {
     break;
   }
   }
-}
-
-bool World::is_stable() {
-  // Copy the current state of the world
-  World world_copy(*this);
-  // evolve the copy to the next generation
-  world_copy.evolve();
-  // If there is a difference, check if there are oscillators of period 2.
-  if (!are_worlds_identical(grid, world_copy.grid)) {
-    // evolve the copy again
-    world_copy.evolve();
-    /* If there is a difference, there are oscillators of periods higher than 2
-    or spaceships a.k.a. the world is unstable*/
-    if (!are_worlds_identical(grid, world_copy.grid)) {
-      return false;
-    }
-  }
-  // if all cells are either the same, or oscillators of period 2, the world is stable
-  return true;
 }
 
 bool World::are_worlds_identical(int* grid_1, int* grid_2) {
