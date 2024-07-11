@@ -2,6 +2,7 @@
 #define WORLD_H
 
 #include "OpenCLWrapper.h"
+#include <vector>
 
 class World {
 private:

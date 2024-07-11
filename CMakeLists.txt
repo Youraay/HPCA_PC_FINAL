@@ -23,6 +23,8 @@ set(SOURCES
 # Create executable
 add_executable(GameOfLife ${SOURCES})
 
+
+
 # Command to build using CMake
 #mkdir build # create build directory
 #cd build # move into build directory
