@@ -328,10 +328,12 @@ long CommandLineInterface::calculate_processing_time(long generations) {
         old_equal_new = this->world->are_worlds_identical(oldGrid, this->world->evolve());
         delete[] oldGrid;
         generations_done++;
-        if (old_equal_new && is_maybe_stable) {
-            is_stable = true;
-        } else if (old_equal_new && !is_maybe_stable) {
+        if (old_equal_new && !is_maybe_stable) {
             is_maybe_stable = true;
+        } else if (old_equal_new && is_maybe_stable) {
+            is_stable = true;
+        } else if (!old_equal_new && is_maybe_stable) {
+            is_maybe_stable = false;
         }
         if(this->print) this->world->print(); 
         if(is_stable) {
