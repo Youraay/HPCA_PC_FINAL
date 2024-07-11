@@ -9,6 +9,9 @@ set(CMAKE_CXX_STANDARD 17) # Set C^++ standard version
 # Add compiler flags:
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -fno-tree-vectorize -I/usr/include/gegl-0.4 -L/usr/lib64 /usr/lib64/libOpenCL.so.1")
 
+# Add compiler flags for debug mode:
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_RELEASE} -g -Wall")
+
 # Include directories
 include_directories(${PROJECT_SOURCE_DIR}/include)
 

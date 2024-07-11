@@ -10,26 +10,34 @@ OpenCLWrapper::OpenCLWrapper(World& world) {
     cl_uint N = world.width * world.height; 
     int* newGrid = new int[N];
 
+    // All this debugging text is needed because we can't install additional debugging info without sudo rights.
+    std::cout << "OpenCL: Getting platform IDs..." << std::endl;
     err = clGetPlatformIDs(1, &platform, &platformCount);
     checkError(err, "clGetPlatformIDs");
 
+    std::cout << "OpenCL: Getting device IDs..." << std::endl;
     err = clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, 1, &device, &deviceCount);
     checkError(err, "clGetDeviceIDs");
 
+    std::cout << "OpenCL: Creating context..." << std::endl;
     context = clCreateContext(NULL, 1, &device, NULL, NULL, &err);
     checkError(err, "clCreateContext");
 
+    std::cout << "OpenCL: Creating command queue..." << std::endl;
     queue = clCreateCommandQueue(context, device, 0, &err);
     checkError(err, "clCreateCommandQueue");
 
+    std::cout << "OpenCL: Creating buffers..." << std::endl;
     buffer_newGrid = clCreateBuffer(context, CL_MEM_WRITE_ONLY, sizeof(int) * N, NULL, &err);
     checkError(err, "clCreateBuffer (buffer_newGrid)");
 
+    std::cout << "OpenCL: Reading kernel source..." << std::endl;
     std::string sourceStr = readKernelSource("../src/evolve.cl");
     const char* source = sourceStr.c_str();
     program = clCreateProgramWithSource(context, 1, &source, NULL, &err);
     checkError(err, "clCreateProgramWithSource");
 
+    std::cout << "OpenCL: Building program..." << std::endl;
     err = clBuildProgram(program, 1, &device, NULL, NULL, NULL);
     if (err != CL_SUCCESS) {
         size_t log_size;
@@ -41,11 +49,11 @@ OpenCLWrapper::OpenCLWrapper(World& world) {
         exit(1);
     }
 
+    std::cout << "OpenCL: Creating kernel..." << std::endl;
     kernel = clCreateKernel(program, "evolve", &err);
     checkError(err, "clCreateKernel");
 
-    err = clSetKernelArg(kernel, 0, sizeof(cl_mem), &buffer_grid);
-    checkError(err, "clSetKernelArg (buffer_grid)");
+    std::cout << "OpenCL: Setting kernel arguments..." << std::endl;
     err = clSetKernelArg(kernel, 1, sizeof(cl_mem), &buffer_newGrid);
     checkError(err, "clSetKernelArg (buffer_newGrid)");
     err = clSetKernelArg(kernel, 2, sizeof(int), &world.width);
@@ -55,6 +63,9 @@ OpenCLWrapper::OpenCLWrapper(World& world) {
 
     global_work_size[0] = (size_t)world.width;
     global_work_size[1] = (size_t)world.height;
+
+    std::cout << "OpenCL Initialized!" << std::endl;
+    printAttributes();
 }
 
 OpenCLWrapper::~OpenCLWrapper() {
