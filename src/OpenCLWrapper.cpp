@@ -49,16 +49,39 @@ OpenCLWrapper::OpenCLWrapper(World& world) {
     checkError(err, "clCreateKernel");
 
     std::cout << "OpenCL: Creating buffers..." << std::endl;
+    // Buffer for the current grid (evolve).
+    buffer_grid = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(int) * world.N, NULL, &err);
+    checkError(err, "clCreateBuffer (buffer_grid)");
+    // Buffer for the new grid (evolve).
     buffer_newGrid = clCreateBuffer(context, CL_MEM_WRITE_ONLY, sizeof(int) * world.N, NULL, &err);
     checkError(err, "clCreateBuffer (buffer_newGrid)");
+    // Buffer for the first grid (compare)
+    buffer_grid1 = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(int) * world.N, NULL, &err);
+    checkError(err, "clCreateBuffer (buffer_grid1)");
+    // Buffer for the second grid (compare)
+    buffer_grid2 = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(int) * world.N, NULL, &err);
+    checkError(err, "clCreateBuffer (buffer_grid1)");
+    // Buffer for the comparison result (compare)
+    buffer_result = clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof(int), NULL, &err);
+    checkError(err, "clCreateBuffer (buffer_result)");
 
     std::cout << "OpenCL: Setting kernel arguments..." << std::endl;
+    // Set the arguments for the evolve kernel.
+    err = clSetKernelArg(kernel_evolve, 0, sizeof(cl_mem), &buffer_grid);
+    checkError(err, "clSetKernelArg (buffer_grid)");
     err = clSetKernelArg(kernel_evolve, 1, sizeof(cl_mem), &buffer_newGrid);
     checkError(err, "clSetKernelArg (buffer_newGrid)");
     err = clSetKernelArg(kernel_evolve, 2, sizeof(int), &world.width);
     checkError(err, "clSetKernelArg (width)");
     err = clSetKernelArg(kernel_evolve, 3, sizeof(int), &world.height);
     checkError(err, "clSetKernelArg (height)");
+    // Set the arguments for the compare kernel.
+    err = clSetKernelArg(kernel_compare, 0, sizeof(cl_mem), &buffer_grid1);
+    checkError(err, "clSetKernelArg (buffer_grid1)");
+    err = clSetKernelArg(kernel_compare, 1, sizeof(cl_mem), &buffer_grid2);
+    checkError(err, "clSetKernelArg (buffer_grid2)");
+    err = clSetKernelArg(kernel_compare, 2, sizeof(cl_mem), &buffer_result);
+    checkError(err, "clSetKernelArg (result)");
 
     err = clSetKernelArg(kernel_compare, 3, sizeof(ulong), &world.N);
     checkError(err, "clSetKernelArg (N)");
@@ -74,6 +97,10 @@ OpenCLWrapper::OpenCLWrapper(World& world) {
 
 OpenCLWrapper::~OpenCLWrapper() {
     clReleaseMemObject(buffer_newGrid);
+    clReleaseMemObject(buffer_grid);
+    clReleaseMemObject(buffer_grid1);
+    clReleaseMemObject(buffer_grid2);
+    clReleaseMemObject(buffer_result);
     clReleaseKernel(kernel_evolve);
     clReleaseKernel(kernel_compare);
     clReleaseProgram(program);

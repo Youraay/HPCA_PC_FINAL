@@ -5,7 +5,7 @@
 
 // Constructor for CommandLineInterface, handles command line Arguments
 CommandLineInterface::CommandLineInterface(int argc, char **argv) {
-    this->print = true;
+    this->print = false;
     this->delay_in_ms = 500;
     if (argc >= 2 && argc <= 3) {
         if (argc == 2) {

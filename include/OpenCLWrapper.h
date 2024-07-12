@@ -21,7 +21,14 @@ public:
     cl_command_queue queue;
     cl_kernel kernel_evolve;
     cl_kernel kernel_compare;
+    // Buffers for evolve
+    cl_mem buffer_grid;
     cl_mem buffer_newGrid;
+    // Buffers for compare
+    cl_mem buffer_grid1;
+    cl_mem buffer_grid2;
+    cl_mem buffer_result;
+    
     size_t evolve_global_work_size[2];
     size_t compare_global_work_size[1];
 
