@@ -44,9 +44,9 @@ OpenCLWrapper::OpenCLWrapper(World& world) {
 
     std::cout << "OpenCL: Creating kernels..." << std::endl;
     kernel_evolve = clCreateKernel(program, "evolve", &err);
-    checkError(err, "clCreateKernel");
+    checkError(err, "clCreateKernel (evolve)");
     kernel_compare = clCreateKernel(program, "compare_arrays", &err);
-    checkError(err, "clCreateKernel");
+    checkError(err, "clCreateKernel (compare)");
 
     std::cout << "OpenCL: Creating buffers..." << std::endl;
     // Buffer for the current grid (evolve).
