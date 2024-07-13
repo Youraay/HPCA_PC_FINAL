@@ -231,9 +231,12 @@ bool World::are_worlds_identical(int* grid_1, int* grid_2) {
       #pragma omp atomic write
       identical = false;
     }
+    if (!identical) {
+      break;
+    }
   }
 
-  // Handle remaining elements seuqentially
+  // If not false from the parallel section, handle remaining elements seuqentially
   for (int i = par_loop_end; i < grid_size; ++i) {
     if (grid_1[i] != grid_2[i]) {
       identical = false;
