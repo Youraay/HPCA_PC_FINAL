@@ -113,7 +113,7 @@ void World::save_gamestate(std::string file_name) {
       for (int x = 0; x < this->width; x++) {
         for (int y = 0; y < this->height; y++) {
           if (this->get_cell_state(y, x)) {
-            text += " (" + std::to_string(y) + "," + std::to_string(x) + "),";
+            text += " (" + std::to_string(x) + "," + std::to_string(y) + "),";
           }
         }
       }

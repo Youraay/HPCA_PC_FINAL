@@ -206,7 +206,6 @@ void CommandLineInterface::autoPlay(std::atomic<bool> &run) {
 }
 
 void CommandLineInterface::displayMenu() {
-    int eingabea;
     bool run = true;
     while (run) {
         std::cout << "\033[2J\033[H" << "Main Menu" << std::endl;
@@ -216,21 +215,13 @@ void CommandLineInterface::displayMenu() {
         std::cout << "(d)elay settings (int ms)" << std::endl;
         std::cout << "(p)print world update (y/n)" << std::endl;
         std::cout << "(q)uit" << std::endl;
-        //std::cout << eingabea << std::endl;
-        //std::cout << std::isdigit(eingabea) << std::endl;
         std::string input;
 
         std::cout << ">>";
         std::getline(std::cin, input);
 
-
         char objectType;
-        int msSetting;
         std::string arr;
-
-        char printSetting;
-        msSetting = 500;
-
 
         std::istringstream iss(input);
         iss >> objectType;
@@ -309,34 +300,32 @@ void CommandLineInterface::saveMenu() {
 
 long CommandLineInterface::calculate_processing_time(long generations) {
     long generations_done = 0;
-    bool old_equal_new = false;
-    bool is_stable = false;
-    bool is_maybe_stable = false;
+    // Check only if two generations ago the grid was equal as this also catches static life.
+    bool period_2_oscillator = false; 
 
     // Disable automatic deletion of old grid after evolution
     // - we use the old grid value before the evolution and delete it ourselves afterwards.
     this->world->memory_safety = false;
 
+    int* previousGrid = this->world->grid;
+
     // Start the clock
     auto start = std::chrono::high_resolution_clock::now();
-    while (generations_done < generations && !is_stable) {
+    while (generations_done < generations && !period_2_oscillator) {
         std::cout << "\033[2J\033[H" 
                   << "Running the evolution for additional "
                      + std::to_string(generations) + " generations...\n";
         
-        int* oldGrid = this->world->grid;
-        old_equal_new = this->world->are_worlds_identical(oldGrid, this->world->evolve());
-        delete[] oldGrid;
+        // Allocate memory for storing the previous and pre-previous grid;
+        int* twoGenerationsAgoGrid = previousGrid;
+        previousGrid = this->world->grid;
+
+        period_2_oscillator = this->world->are_worlds_identical(twoGenerationsAgoGrid, this->world->evolve());
+        //delete[] twoGenerationsAgoGrid;
         generations_done++;
-        if (old_equal_new && !is_maybe_stable) {
-            is_maybe_stable = true;
-        } else if (old_equal_new && is_maybe_stable) {
-            is_stable = true;
-        } else if (!old_equal_new && is_maybe_stable) {
-            is_maybe_stable = false;
-        }
+
         if(this->print) this->world->print(); 
-        if(is_stable) {
+        if(period_2_oscillator) {
             std::cout << "Stability achieved after " << generations_done-2 
                       << " generations. Ending the simulation." << std::endl; 
         } 
