@@ -1,5 +1,7 @@
 #include "World.h"
 
+#include "../Vc/Vc/Vc"
+
 #include <iostream>
 #include <ostream>
 #include <stdexcept>
@@ -185,7 +187,8 @@ void World::randomize() {
   }
 }
 
-bool World::are_worlds_identical(int* grid_1, int* grid_2) {
+// OpenCL VERSION
+/* bool World::are_worlds_identical(int* grid_1, int* grid_2) {
   int host_result = CL_TRUE;
 
   // Create new buffer for grid1.
@@ -206,9 +209,43 @@ bool World::are_worlds_identical(int* grid_1, int* grid_2) {
   cl->checkError(cl->err, "clEnqueueReadBuffer");
 
   return (bool)host_result;
+} */
+
+
+// OpenMP + Vc VERSION
+bool World::are_worlds_identical(int* grid_1, int* grid_2) {
+  // Create a flag to indicate if the worlds are identical
+  bool identical = true;
+  // Some helping varibales
+  const int grid_size = height * width;
+  const int vec_size = Vc::int_v::Size;
+  const int par_loop_end = grid_size - (grid_size % vec_size);
+
+  // As vector size is 4, handle only a multiple of 4 many elements.
+  #pragma omp parallel for shared(identical)
+  for (int i = 0; i < par_loop_end; i += vec_size) {
+    Vc::int_v vec1(&grid_1[i], Vc::Aligned);
+    Vc::int_v vec2(&grid_2[i], Vc::Aligned);
+
+    if (!Vc::all_of(vec1 == vec2)) {
+      #pragma omp atomic write
+      identical = false;
+    }
+  }
+
+  // Handle remaining elements seuqentially
+  for (int i = par_loop_end; i < grid_size; ++i) {
+    if (grid_1[i] != grid_2[i]) {
+      identical = false;
+      break;
+    }
+  }
+
+  return identical;
 }
 
-/* SCALAR VERSION
+// SCALAR VERSION
+/*
 bool World::are_worlds_identical(int* grid_1, int* grid_2) {
   // Compare each cell in both worlds
   for (int i = 0; i < height; i++) {
