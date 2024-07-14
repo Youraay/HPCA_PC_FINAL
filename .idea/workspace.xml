@@ -20,7 +20,10 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="7a79b855-274a-4792-b2cd-a93995388483" name="Changes" comment="" />
+    <list default="true" id="7a79b855-274a-4792-b2cd-a93995388483" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/cli.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/cli.cpp" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -86,7 +89,7 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1720944883389</updated>
-      <workItem from="1720944884568" duration="6736000" />
+      <workItem from="1720944884568" duration="9305000" />
     </task>
     <servers />
   </component>
