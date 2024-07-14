@@ -310,7 +310,6 @@ long CommandLineInterface::calculate_processing_time(long generations) {
     int gridSize = this->world->height * this->world->width;
 
 
-    int* currentGrid = this->world->grid;
     int* previousGrid = new int[gridSize];
 
 
@@ -324,14 +323,14 @@ long CommandLineInterface::calculate_processing_time(long generations) {
         // Allocate memory for storing the previous and pre-previous grid;
         std::cout << "Pre Pre wird beladen" << generations_done << std::endl;
         int* twoGenerationsAgoGrid = previousGrid;
-
+        memcpy(previousGrid, this->world->grid, sizeof(int) * gridSize);
 
         //Copy the current grid to previousGrid
         std::cout << "Pre wird beladen" << generations_done << std::endl;
-        int* temp = previousGrid;
-        previousGrid = currentGrid;
+
+        
         std::cout << "Evolve wird durchgeführt" << generations_done << std::endl;
-        currentGrid = this->world->evolve();
+        int* currentGrid = this->world->evolve();
         std::cout << "Evolve wird ist fertig" << generations_done << std::endl;
         period_2_oscillator = this->world->are_worlds_identical(twoGenerationsAgoGrid, currentGrid);
         std::cout << "ost wird Ist berechnet" << generations_done << std::endl;
