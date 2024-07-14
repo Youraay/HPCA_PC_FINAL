@@ -356,7 +356,7 @@ long CommandLineInterface::calculate_processing_time(long generations) {
     std::this_thread::sleep_for(std::chrono::seconds(5));
 
     delete[] previousGrid;
-    delete[] twoGenerationsAgoGrid;
+    
 
     // To again automatically delete old grid after evolution.
     this->world->memory_safety = true;
