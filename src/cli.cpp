@@ -323,12 +323,12 @@ long CommandLineInterface::calculate_processing_time(long generations) {
         // Allocate memory for storing the previous and pre-previous grid;
         std::cout << "Pre Pre wird beladen" << generations_done << std::endl;
         int* twoGenerationsAgoGrid = previousGrid;
-        memcpy(previousGrid, this->world->grid, sizeof(int) * gridSize);
+        std::memcpy(previousGrid, this->world->grid, sizeof(int) * gridSize);
 
         //Copy the current grid to previousGrid
         std::cout << "Pre wird beladen" << generations_done << std::endl;
 
-        
+
         std::cout << "Evolve wird durchgeführt" << generations_done << std::endl;
         int* currentGrid = this->world->evolve();
         std::cout << "Evolve wird ist fertig" << generations_done << std::endl;
