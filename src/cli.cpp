@@ -308,7 +308,10 @@ long CommandLineInterface::calculate_processing_time(long generations) {
 
     // - we use the old grid value before the evolution and delete it ourselves afterwards.
     int gridSize = this->world->height * this->world->width;
-    int* previousGrid = this->world->grid;
+
+    int* currentGrid = this->world->grid;
+    int* previousGrid = new int[gridSize];
+
 
     // Start the clock
     auto start = std::chrono::high_resolution_clock::now();
@@ -322,9 +325,10 @@ long CommandLineInterface::calculate_processing_time(long generations) {
         twoGenerationsAgoGrid = previousGrid;
 
         //Copy the current grid to previousGrid
-        previousGrid = this->world->grid;
+        previousGrid = currentGrid;
+        currentGrid = this->world->evolve();
 
-        period_2_oscillator = this->world->are_worlds_identical(twoGenerationsAgoGrid, this->world->evolve());
+        period_2_oscillator = this->world->are_worlds_identical(twoGenerationsAgoGrid, currentGrid);
 
 
         //Free the memory allocated for twoGenerationsAgoGrid
