@@ -304,14 +304,11 @@ long CommandLineInterface::calculate_processing_time(long generations) {
     // Check only if two generations ago the grid was equal as this also catches static life.
     bool period_2_oscillator = false; 
 
-    // Disable automatic deletion of old grid after evolution// - we use the old grid value before the evolution and delete it ourselves afterwards.
+    // Disable automatic deletion of old grid after evolution
+    // - we use the old grid value before the evolution and delete it ourselves afterwards.
     this->world->memory_safety = true;
 
-    // - we use the old grid value before the evolution and delete it ourselves afterwards.
-    int gridSize = this->world->height * this->world->width;
-
-
-    int* previousGrid = new int[gridSize];
+    int* previousGrid = new int[this->world->N];
 
 
     // Start the clock
@@ -324,7 +321,7 @@ long CommandLineInterface::calculate_processing_time(long generations) {
         // Allocate memory for storing the previous and pre-previous grid;
         std::cout << "Pre Pre wird beladen" << generations_done << std::endl;
         int* twoGenerationsAgoGrid = previousGrid;
-        std::memcpy(previousGrid, this->world->grid, sizeof(int) * gridSize);
+        std::memcpy(previousGrid, this->world->grid, sizeof(int) * this->world->N);
 
         //Copy the current grid to previousGrid
         std::cout << "Pre wird beladen" << generations_done << std::endl;
