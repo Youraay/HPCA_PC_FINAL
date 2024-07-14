@@ -1,0 +1,3 @@
+/Users/yourisinziri/Library/CloudStorage/OneDrive-Personal/0. Studium/Informatik B.Sc/Semester 8/04 HPCA/Final/HPCA_PC_FINAL/cmake-build-debug/CMakeFiles/GameOfLife.dir
+/Users/yourisinziri/Library/CloudStorage/OneDrive-Personal/0. Studium/Informatik B.Sc/Semester 8/04 HPCA/Final/HPCA_PC_FINAL/cmake-build-debug/CMakeFiles/edit_cache.dir
+/Users/yourisinziri/Library/CloudStorage/OneDrive-Personal/0. Studium/Informatik B.Sc/Semester 8/04 HPCA/Final/HPCA_PC_FINAL/cmake-build-debug/CMakeFiles/rebuild_cache.dir

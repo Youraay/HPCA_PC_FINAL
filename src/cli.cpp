@@ -72,7 +72,7 @@ void CommandLineInterface::mainMenu() {
                     addMenu(); // Enter the edit menu
                     break;
                 case 'd':
-                    displayMenu(); // Enter the edit menu
+                    displayMenu(); // Enter the display menu
                     break;
                 case 'q':
                     run = false;
@@ -303,11 +303,13 @@ long CommandLineInterface::calculate_processing_time(long generations) {
     // Check only if two generations ago the grid was equal as this also catches static life.
     bool period_2_oscillator = false; 
 
-    // Disable automatic deletion of old grid after evolution
-    // - we use the old grid value before the evolution and delete it ourselves afterwards.
+    // Disable automatic deletion of old grid after evolution// - we use the old grid value before the evolution and delete it ourselves afterwards.
     this->world->memory_safety = false;
 
-    int* previousGrid = this->world->grid;
+    // - we use the old grid value before the evolution and delete it ourselves afterwards.
+    int gridSize = this->world->height * this->world->width;
+    int* previousGrid = new int[gridSize];
+    std::copy(this->world->grid, this->world->grid + gridSize, previousGrid);
 
     // Start the clock
     auto start = std::chrono::high_resolution_clock::now();
@@ -317,11 +319,17 @@ long CommandLineInterface::calculate_processing_time(long generations) {
                      + std::to_string(generations) + " generations...\n";
         
         // Allocate memory for storing the previous and pre-previous grid;
-        int* twoGenerationsAgoGrid = previousGrid;
-        previousGrid = this->world->grid;
+        int* twoGenerationsAgoGrid = new int[gridSize];
+        std::copy(previousGrid, previousGrid + gridSize, twoGenerationsAgoGrid);
+
+        //Copy the current grid to previousGrid
+        std::copy(this->world->grid, this->world->grid + gridSize, previousGrid);previousGrid = this->world->grid;
 
         period_2_oscillator = this->world->are_worlds_identical(twoGenerationsAgoGrid, this->world->evolve());
-        //delete[] twoGenerationsAgoGrid;
+
+        //Free the memory allocated for twoGenerationsAgoGrid
+        delete[] twoGenerationsAgoGrid;
+
         generations_done++;
 
         if(this->print) this->world->print(); 
