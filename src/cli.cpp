@@ -324,7 +324,7 @@ long CommandLineInterface::calculate_processing_time(long generations) {
 
         //Copy the current grid to previousGrid
         std::copy(this->world->grid, this->world->grid + gridSize, previousGrid);previousGrid = this->world->grid;
-        delete[] previousGrid;
+        
         period_2_oscillator = this->world->are_worlds_identical(twoGenerationsAgoGrid, this->world->evolve());
 
         //Free the memory allocated for twoGenerationsAgoGrid
