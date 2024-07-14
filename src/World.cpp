@@ -23,8 +23,8 @@ World::World(int height, int width) {
   this->width = width;
   this->N = this->height * this->width;
   this->generation = 0;
-  this->grid = new int[height * width];
-  std::fill_n(this->grid, this->height * this->width, 0);
+  this->grid = new int[this->N];
+  std::fill_n(this->grid, this->N, 0);
   this->cl = NULL;
   this->patterns = {'b', 'g', 'm', 't'};
   std::cout << "WORLD CREATED." << std::endl;
@@ -73,8 +73,8 @@ World::World(std::string &file_name) {
 
   this->N = this->height * this->width;
   this->generation = 0;
-  this->grid = new int[this->height * this->width];
-  std::fill_n(this->grid, this->height * this->width, 0);
+  this->grid = new int[this->N];
+  std::fill_n(this->grid, this->N, 0);
   this->cl = NULL;
   this->patterns = {'b', 'g', 'm', 't'};
 
@@ -124,13 +124,13 @@ void World::save_gamestate(std::string file_name) {
   } 
 }
 
+// OpenCL VERSION
 int* World::evolve() {
-  /*
-  * Go through all cells in the current grid and determine whether they:
-  *  1. Die, as if by underpopulation or overpopulation
-  *  2. Continue living on to the next generation
-  *  3. Come to life, as if by reproduction 
-  */
+  // Go through all cells in the current grid and determine whether they:
+  // 1. Die, as if by underpopulation or overpopulation
+  // 2. Continue living on to the next generation
+  // 3. Come to life, as if by reproduction 
+  
   // Declare new grid
   int* newGrid = new int[this->N];
 
@@ -153,6 +153,50 @@ int* World::evolve() {
 
   return this->grid;
 }
+
+// SCALAR VERSION
+/*
+int* World::evolve() {
+  // Declare new grid
+  int* newGrid = new int[this->N];
+
+  // Go through all cells in the current grid and determine whether they:
+  // 1. Die, as if by underpopulation or overpopulation
+  // 2. Continue living on to the next generation
+  // 3. Come to life, as if by reproduction
+  for (int y = 0; y < this->height; y++) {
+    for (int x = 0; x < this->width; x++) {
+      // Variable for counting all living neighbors
+      int determinationValue = 0;
+      // Go through all adjacent cells and add them up
+      for (int dy = -1; dy <= 1; dy++) {
+        for (int dx = -1; dx <=1; dx++) {
+          if (dx == 0 && dy ==0) continue;
+
+          int sx = (x+ dx+ this->width) % this->width;
+          int sy = (y+ dy+ this->height) % this->height;
+
+          determinationValue += this->grid[sy * this->width + sx];
+        }
+      }
+      if (determinationValue == 2) {
+        newGrid[y * this->width + x] = this->grid[y * this->width + x];
+      } else if (determinationValue == 3) {
+        newGrid[y * this->width + x] = 1;
+      } else {
+        newGrid[y * this->width + x] = 0;
+      }
+    }
+  }
+
+  // Overwrite old with new grid and increment generation counter.
+  if (memory_safety) delete[] this->grid;
+  this->grid = newGrid;
+  this->generation++;
+
+  return this->grid;
+}
+*/
 
 void World::randomize() {
   // seed random number generator with current time
@@ -188,7 +232,6 @@ void World::randomize() {
 }
 
 // OpenCL VERSION
-/*
 bool World::are_worlds_identical(int* grid_1, int* grid_2) {
   int host_result = CL_TRUE;
 
@@ -211,7 +254,7 @@ bool World::are_worlds_identical(int* grid_1, int* grid_2) {
 
   return (bool)host_result;
 }
-*/
+
 
 // OpenMP + Vc VERSION
 bool World::are_worlds_identical(int* grid_1, int* grid_2) {
@@ -251,6 +294,7 @@ bool World::are_worlds_identical(int* grid_1, int* grid_2) {
   return identical;
 }
 
+
 // SCALAR VERSION
 /*
 bool World::are_worlds_identical(int* grid_1, int* grid_2) {
@@ -267,6 +311,7 @@ bool World::are_worlds_identical(int* grid_1, int* grid_2) {
   return true;
 }
 */
+
 
 int World::get_cell_state(int y, int x) {
   // Return cell state, if coordinates are valid
