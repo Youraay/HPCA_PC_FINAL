@@ -322,16 +322,19 @@ long CommandLineInterface::calculate_processing_time(long generations) {
                      + std::to_string(generations -generations_done) + " generations...\n";
         
         // Allocate memory for storing the previous and pre-previous grid;
+        std::cout << "Pre Pre wird beladen" << generations_done << std::endl;
         int* twoGenerationsAgoGrid = previousGrid;
 
 
         //Copy the current grid to previousGrid
+        std::cout << "Pre wird beladen" << generations_done << std::endl;
         int* temp = previousGrid;
         previousGrid = currentGrid;
+        std::cout << "Evolve wird durchgeführt" << generations_done << std::endl;
         currentGrid = this->world->evolve();
-
+        std::cout << "Evolve wird ist fertig" << generations_done << std::endl;
         period_2_oscillator = this->world->are_worlds_identical(twoGenerationsAgoGrid, currentGrid);
-
+        std::cout << "ost wird Ist berechnet" << generations_done << std::endl;
         generations_done++;
 
         if(this->print) this->world->print(); 
