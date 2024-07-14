@@ -2,6 +2,7 @@
 #include <iostream>
 #include <thread>
 #include <sstream>
+#include <cstring>
 
 // Constructor for CommandLineInterface, handles command line Arguments
 CommandLineInterface::CommandLineInterface(int argc, char **argv) {
