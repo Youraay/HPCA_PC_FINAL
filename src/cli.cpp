@@ -305,7 +305,7 @@ long CommandLineInterface::calculate_processing_time(long generations) {
     bool period_2_oscillator = false; 
 
     // Disable automatic deletion of old grid after evolution// - we use the old grid value before the evolution and delete it ourselves afterwards.
-    this->world->memory_safety = false;
+    this->world->memory_safety = true;
 
     // - we use the old grid value before the evolution and delete it ourselves afterwards.
     int gridSize = this->world->height * this->world->width;
