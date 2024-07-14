@@ -318,7 +318,7 @@ long CommandLineInterface::calculate_processing_time(long generations) {
     while (generations_done < generations && !period_2_oscillator) {
         std::cout << "\033[2J\033[H" 
                   << "Running the evolution for additional "
-                     + std::to_string(generations) - generations_done+ " generations...\n";
+                     + std::to_string(generations - generations_done) + " generations...\n";
         
         // Allocate memory for storing the previous and pre-previous grid;
 
