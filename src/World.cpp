@@ -232,6 +232,7 @@ void World::randomize() {
 }
 
 // OpenCL VERSION
+/*
 bool World::are_worlds_identical(int* grid_1, int* grid_2) {
   int host_result = CL_TRUE;
 
@@ -254,7 +255,7 @@ bool World::are_worlds_identical(int* grid_1, int* grid_2) {
 
   return (bool)host_result;
 }
-
+*/
 
 // OpenMP + Vc VERSION
 bool World::are_worlds_identical(int* grid_1, int* grid_2) {

@@ -88,8 +88,11 @@ OpenCLWrapper::OpenCLWrapper(World& world) {
 
     evolve_global_work_size[0] = (size_t)world.width;
     evolve_global_work_size[1] = (size_t)world.height;
+    //evolve_local_work_size[0] = 16;
+    //evolve_local_work_size[1] = 16;
 
     compare_global_work_size[0] = world.N;
+    //compare_local_work_size[0] = 16;
 
     std::cout << "OpenCL Initialized!" << std::endl;
     printAttributes();

@@ -31,6 +31,8 @@ public:
     
     size_t evolve_global_work_size[2];
     size_t compare_global_work_size[1];
+    size_t evolve_local_work_size[2];
+    size_t compare_local_work_size[1];
 
     cl_program program;
     cl_context context;
