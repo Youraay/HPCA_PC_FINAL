@@ -7,7 +7,7 @@
 // Constructor for CommandLineInterface, handles command line Arguments
 CommandLineInterface::CommandLineInterface(int argc, char **argv) {
     this->print = false;
-    this->delay_in_ms = 500;
+    this->delay_in_ms = 0;
     if (argc >= 2 && argc <= 3) {
         if (argc == 2) {
             std::cout << "Open File:" << argv[1] << std::endl;
@@ -309,29 +309,23 @@ long CommandLineInterface::calculate_processing_time(long generations) {
     this->world->memory_safety = true;
 
     int* previousGrid = new int[this->world->N];
-
+    // init with 2's just to make sure that twoGenerationsAgo isn't instantly equal with an empty grid
+    std::fill_n(previousGrid, this->world->N, 2);
+    int* twoGenerationsAgoGrid = new int[this->world->N];
 
     // Start the clock
     auto start = std::chrono::high_resolution_clock::now();
     while (generations_done < generations && !period_2_oscillator) {
         std::cout << "\033[2J\033[H" 
-                  << "Running the evolution for additional "
-                     + std::to_string(generations -generations_done) + " generations...\n";
+                << "Running the evolution for additional "
+                    + std::to_string(generations-generations_done) + " generations...\n";
         
-        // Allocate memory for storing the previous and pre-previous grid;
-        std::cout << "Pre Pre wird beladen" << generations_done << std::endl;
-        int* twoGenerationsAgoGrid = previousGrid;
+        // Copy the previous grid to the twoGenerationsAgo memory.
+        std::memcpy(twoGenerationsAgoGrid, previousGrid, sizeof(int) * this->world->N);
+        // Copy the current grid (before evolution) to the previousGrid memory.
         std::memcpy(previousGrid, this->world->grid, sizeof(int) * this->world->N);
 
-        //Copy the current grid to previousGrid
-        std::cout << "Pre wird beladen" << generations_done << std::endl;
-
-
-        std::cout << "Evolve wird durchgeführt" << generations_done << std::endl;
-        int* currentGrid = this->world->evolve();
-        std::cout << "Evolve wird ist fertig" << generations_done << std::endl;
-        period_2_oscillator = this->world->are_worlds_identical(twoGenerationsAgoGrid, currentGrid);
-        std::cout << "ost wird Ist berechnet" << generations_done << std::endl;
+        period_2_oscillator = this->world->are_worlds_identical(twoGenerationsAgoGrid, this->world->evolve());
         generations_done++;
 
         if(this->print) this->world->print(); 
@@ -344,6 +338,7 @@ long CommandLineInterface::calculate_processing_time(long generations) {
         std::this_thread::sleep_for(std::chrono::milliseconds(delay_in_ms));
     }
     delete[] previousGrid;
+    delete[] twoGenerationsAgoGrid;
 
     // Stop the clock
     auto stop = std::chrono::high_resolution_clock::now();
@@ -362,3 +357,5 @@ long CommandLineInterface::calculate_processing_time(long generations) {
 
     return duration.count();
 }
+
+
