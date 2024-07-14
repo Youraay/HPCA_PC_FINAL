@@ -4,3 +4,5 @@ build/
 GameOfLife
 .gitignore
 Vc/
+.idea/
+cmake-build-debug/
