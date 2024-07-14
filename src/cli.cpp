@@ -321,19 +321,15 @@ long CommandLineInterface::calculate_processing_time(long generations) {
                      + std::to_string(generations -generations_done) + " generations...\n";
         
         // Allocate memory for storing the previous and pre-previous grid;
-        int* twoGenerationsAgoGrid = nullptr;
-        twoGenerationsAgoGrid = previousGrid;
+        int* twoGenerationsAgoGrid = previousGrid;
+
 
         //Copy the current grid to previousGrid
         previousGrid = currentGrid;
         currentGrid = this->world->evolve();
 
         period_2_oscillator = this->world->are_worlds_identical(twoGenerationsAgoGrid, currentGrid);
-
-
-        //Free the memory allocated for twoGenerationsAgoGrid
-        delete[] twoGenerationsAgoGrid;
-
+        
         generations_done++;
 
         if(this->print) this->world->print(); 
@@ -346,6 +342,8 @@ long CommandLineInterface::calculate_processing_time(long generations) {
         std::this_thread::sleep_for(std::chrono::milliseconds(delay_in_ms));
     }
     delete[] previousGrid;
+    delete[] currentGrid;
+
     // Stop the clock
     auto stop = std::chrono::high_resolution_clock::now();
 
