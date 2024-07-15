@@ -30,12 +30,10 @@ __kernel void evolve(const __global bool* grid,
 __kernel void compare_arrays(const __global bool* array1,
                              const __global bool* array2,
                              __global int* result, ulong size) {
-  if (result) {
-    int index = get_global_id(0);
-    if (index < size) {
-        if (array1[index] != array2[index]) {
-            *result = false;
-        }
-    }
+  int index = get_global_id(0);
+  if (index < size) {
+      if (array1[index] != array2[index]) {
+          *result = false;
+      }
   }
 }

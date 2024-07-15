@@ -321,9 +321,9 @@ long CommandLineInterface::calculate_processing_time(long generations) {
                     + std::to_string(generations-generations_done) + " generations...\n";
         
         // Copy the previous grid to the twoGenerationsAgo memory.
-        std::memcpy(twoGenerationsAgoGrid, previousGrid, sizeof(twoGenerationsAgoGrid));
+        std::memcpy(twoGenerationsAgoGrid, previousGrid, sizeof(bool) * this->world->N);
         // Copy the current grid (before evolution) to the previousGrid memory.
-        std::memcpy(previousGrid, this->world->grid, sizeof(previousGrid));
+        std::memcpy(previousGrid, this->world->grid, sizeof(bool) * this->world->N);
 
         period_2_oscillator = this->world->are_worlds_identical(twoGenerationsAgoGrid, this->world->evolve());
         generations_done++;
