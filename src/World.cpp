@@ -1,7 +1,5 @@
 #include "World.h"
 
-#include "../Vc/Vc/Vc"
-
 #include <iostream>
 #include <ostream>
 #include <stdexcept>
@@ -14,7 +12,7 @@
 
 /*
 * To compile your source code, please use the following command to link the OpenCL library: 
-* g++ MatMul.cpp -o MatMul -O3 -fopenmp -fno-tree-vectorize -I/usr/include/gegl-0.4 -I~/Vc/include -L~/Vc/lib ~/Vc/lib/libVc.a -L/usr/lib64 /usr/lib64/libOpenCL.so.1
+* g++ MatMul.cpp -o MatMul -O3 -fno-tree-vectorize -I/usr/include/gegl-0.4 -L/usr/lib64 /usr/lib64/libOpenCL.so.1
 */
 
 // Constructor for World with given height or width
@@ -316,45 +314,6 @@ bool World::are_worlds_identical(bool* grid_1, bool* grid_2) {
   return (bool)host_result;
 }
 
-// OpenMP + Vc VERSION
-/*
-bool World::are_worlds_identical(bool* grid_1, bool* grid_2) {
-  // Create a flag to indicate if the worlds are identical
-  bool identical = true;
-  // Some helping varibales
-  const int grid_size = height * width;
-  const int vec_size = Vc::int_v::Size;
-  const int par_loop_end = grid_size - (grid_size % vec_size);
-
-  // As vector size is 4, handle only a multiple of 4 many elements.
-  #pragma omp parallel for shared(identical)
-  for (int i = 0; i < par_loop_end; i += vec_size) {
-    if (identical) {
-      Vc::int_v vec1(&grid_1[i], Vc::Aligned);
-      Vc::int_v vec2(&grid_2[i], Vc::Aligned);
-
-      if (!Vc::all_of(vec1 == vec2)) {
-        #pragma omp atomic write
-        identical = false;
-      }
-    }
-  }
-
-  // If not false from the parallel section, handle remaining elements seuqentially
-  if (identical) {
-    for (int i = par_loop_end; i < grid_size; ++i) {
-      if (identical) {
-        if (grid_1[i] != grid_2[i]) {
-          identical = false;
-          break;
-        }
-      }
-    }
-  }
-
-  return identical;
-}
-*/
 
 // SCALAR VERSION
 /*

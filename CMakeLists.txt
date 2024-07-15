@@ -7,7 +7,7 @@ project(GameOfLife) # set project name
 set(CMAKE_CXX_STANDARD 17) # Set C^++ standard version
 
 # Add compiler flags:
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -fno-tree-vectorize -fopenmp -I~/Vc/include -L~/Vc/lib -I/usr/include/gegl-0.4 -L/usr/lib64")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -fno-tree-vectorize -I/usr/include/gegl-0.4 -L/usr/lib64")
 
 # Add compiler flags for debug mode:
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_RELEASE} -g -Wall")
@@ -27,7 +27,7 @@ set(SOURCES
 add_executable(GameOfLife ${SOURCES})
 
 # Link against Vc library
-target_link_libraries(GameOfLife $ENV{HOME}/Vc/lib/libVc.a /usr/lib64/libOpenCL.so.1)
+target_link_libraries(GameOfLife $ENV{HOME}/usr/lib64/libOpenCL.so.1)
 
 
 
