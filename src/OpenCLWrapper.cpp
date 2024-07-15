@@ -62,7 +62,7 @@ OpenCLWrapper::OpenCLWrapper(World& world) {
     checkError(err, "clCreateBuffer (buffer_grid1)");
     // Buffer for the second grid (compare)
     buffer_grid2 = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(bool) * world.N, NULL, &err);
-    checkError(err, "clCreateBuffer (buffer_grid1)");
+    checkError(err, "clCreateBuffer (buffer_grid2)");
     // Buffer for the comparison result (compare)
     buffer_result = clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof(int), NULL, &err);
     checkError(err, "clCreateBuffer (buffer_result)");
