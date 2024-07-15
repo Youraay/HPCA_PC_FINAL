@@ -10,7 +10,7 @@ private:
     int width; // Width in cells.
     ulong N; // Total number of cells (Height * Width).
     long int generation; // Generation of the Game of Life.
-    int* grid; // 2-dimensional Grid of Cells, Alive = 1, Dead = 0
+    bool* grid; // 2-dimensional Grid of Cells, Alive = 1, Dead = 0
     OpenCLWrapper* cl;
     std::vector<char> patterns; // list of patterns, instertable into the world
     bool memory_safety = true;
@@ -24,7 +24,7 @@ private:
      * 
      * @returns The grid of the world after the evolution.
     */
-    int* evolve();
+    bool* evolve();
 
     /**
      * @brief Create a random pattern in a random location (cell) of the world.
@@ -87,7 +87,7 @@ public:
      *  
      *  @return True or false, depending on whether they are identical.
     */
-    bool are_worlds_identical(int* grid_1, int* grid_2);
+    bool are_worlds_identical(bool* grid_1, bool* grid_2);
 
     /**
      * @brief  Get a cell state given a two-dimensional grid position (x, y).

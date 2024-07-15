@@ -308,10 +308,10 @@ long CommandLineInterface::calculate_processing_time(long generations) {
     // - we use the old grid value before the evolution and delete it ourselves afterwards.
     this->world->memory_safety = true;
 
-    int* previousGrid = new int[this->world->N];
+    bool* previousGrid = new bool[this->world->N];
     // init with 2's just to make sure that twoGenerationsAgo isn't instantly equal with an empty grid
-    std::fill_n(previousGrid, this->world->N, 2);
-    int* twoGenerationsAgoGrid = new int[this->world->N];
+    //std::fill_n(previousGrid, this->world->N, 2);
+    bool* twoGenerationsAgoGrid = new bool[this->world->N];
 
     // Start the clock
     auto start = std::chrono::high_resolution_clock::now();
@@ -321,9 +321,9 @@ long CommandLineInterface::calculate_processing_time(long generations) {
                     + std::to_string(generations-generations_done) + " generations...\n";
         
         // Copy the previous grid to the twoGenerationsAgo memory.
-        std::memcpy(twoGenerationsAgoGrid, previousGrid, sizeof(int) * this->world->N);
+        std::memcpy(twoGenerationsAgoGrid, previousGrid, sizeof(twoGenerationsAgoGrid));
         // Copy the current grid (before evolution) to the previousGrid memory.
-        std::memcpy(previousGrid, this->world->grid, sizeof(int) * this->world->N);
+        std::memcpy(previousGrid, this->world->grid, sizeof(previousGrid));
 
         period_2_oscillator = this->world->are_worlds_identical(twoGenerationsAgoGrid, this->world->evolve());
         generations_done++;

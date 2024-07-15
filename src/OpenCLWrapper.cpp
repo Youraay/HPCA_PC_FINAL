@@ -13,7 +13,7 @@ OpenCLWrapper::OpenCLWrapper(World& world) {
     checkError(err, "clGetPlatformIDs");
 
     std::cout << "OpenCL: Getting device IDs..." << std::endl;
-    err = clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, 1, &device, &deviceCount);
+    err = clGetDeviceIDs(platform, CL_DEVICE_TYPE_GPU, 1, &device, &deviceCount);
     checkError(err, "clGetDeviceIDs");
 
     std::cout << "OpenCL: Creating context..." << std::endl;
@@ -22,6 +22,8 @@ OpenCLWrapper::OpenCLWrapper(World& world) {
 
     std::cout << "OpenCL: Creating command queue..." << std::endl;
     queue = clCreateCommandQueue(context, device, 0, &err);
+    // COMMENT ABOVE AND UNCOMMENT BELOW FOR PROFILING.
+    //queue = clCreateCommandQueue(context, device, CL_QUEUE_PROFILING_ENABLE, &err);
     checkError(err, "clCreateCommandQueue");
 
     std::cout << "OpenCL: Reading kernel source..." << std::endl;
@@ -50,16 +52,16 @@ OpenCLWrapper::OpenCLWrapper(World& world) {
 
     std::cout << "OpenCL: Creating buffers..." << std::endl;
     // Buffer for the current grid (evolve).
-    buffer_grid = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(int) * world.N, NULL, &err);
+    buffer_grid = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(bool) * world.N, NULL, &err);
     checkError(err, "clCreateBuffer (buffer_grid)");
     // Buffer for the new grid (evolve).
-    buffer_newGrid = clCreateBuffer(context, CL_MEM_WRITE_ONLY, sizeof(int) * world.N, NULL, &err);
+    buffer_newGrid = clCreateBuffer(context, CL_MEM_WRITE_ONLY, sizeof(bool) * world.N, NULL, &err);
     checkError(err, "clCreateBuffer (buffer_newGrid)");
     // Buffer for the first grid (compare)
-    buffer_grid1 = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(int) * world.N, NULL, &err);
+    buffer_grid1 = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(bool) * world.N, NULL, &err);
     checkError(err, "clCreateBuffer (buffer_grid1)");
     // Buffer for the second grid (compare)
-    buffer_grid2 = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(int) * world.N, NULL, &err);
+    buffer_grid2 = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(bool) * world.N, NULL, &err);
     checkError(err, "clCreateBuffer (buffer_grid1)");
     // Buffer for the comparison result (compare)
     buffer_result = clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof(int), NULL, &err);
@@ -95,7 +97,7 @@ OpenCLWrapper::OpenCLWrapper(World& world) {
     //compare_local_work_size[0] = 16;
 
     std::cout << "OpenCL Initialized!" << std::endl;
-    printAttributes();
+    printAttributes(platform, device);
 }
 
 OpenCLWrapper::~OpenCLWrapper() {
@@ -126,7 +128,48 @@ void OpenCLWrapper::checkError(cl_int err, const char* operation) {
     }
 }
 
-void OpenCLWrapper::printAttributes() {
+void OpenCLWrapper::printAttributes(cl_platform_id platform, cl_device_id device) {
+    char info[1024];
+
+    // Platform Info
+    clGetPlatformInfo(platform, CL_PLATFORM_NAME, sizeof(info), info, NULL);
+    std::cout << "Platform: " << info << std::endl;
+    clGetPlatformInfo(platform, CL_PLATFORM_VENDOR, sizeof(info), info, NULL);
+    std::cout << "Vendor: " << info << std::endl;
+    clGetPlatformInfo(platform, CL_PLATFORM_VERSION, sizeof(info), info, NULL);
+    std::cout << "Version: " << info << std::endl;
+    clGetPlatformInfo(platform, CL_PLATFORM_PROFILE, sizeof(info), info, NULL);
+    std::cout << "Profile: " << info << std::endl;
+
+    // Device Info
+    clGetDeviceInfo(device, CL_DEVICE_NAME, sizeof(info), info, NULL);
+    std::cout << "Device: " << info << std::endl;
+    clGetDeviceInfo(device, CL_DEVICE_VENDOR, sizeof(info), info, NULL);
+    std::cout << "Vendor: " << info << std::endl;
+    clGetDeviceInfo(device, CL_DEVICE_VERSION, sizeof(info), info, NULL);
+    std::cout << "Version: " << info << std::endl;
+    clGetDeviceInfo(device, CL_DRIVER_VERSION, sizeof(info), info, NULL);
+    std::cout << "Driver Version: " << info << std::endl;
+
+    cl_uint compute_units;
+    clGetDeviceInfo(device, CL_DEVICE_MAX_COMPUTE_UNITS, sizeof(compute_units), &compute_units, NULL);
+    std::cout << "Compute Units: " << compute_units << std::endl;
+
+    size_t work_group_size;
+    clGetDeviceInfo(device, CL_DEVICE_MAX_WORK_GROUP_SIZE, sizeof(work_group_size), &work_group_size, NULL);
+    std::cout << "Max Work Group Size: " << work_group_size << std::endl;
+
+    cl_ulong global_mem_size;
+    clGetDeviceInfo(device, CL_DEVICE_GLOBAL_MEM_SIZE, sizeof(global_mem_size), &global_mem_size, NULL);
+    std::cout << "Global Memory Size: " << global_mem_size / (1024 * 1024) << " MB" << std::endl;
+
+    cl_ulong local_mem_size;
+    clGetDeviceInfo(device, CL_DEVICE_LOCAL_MEM_SIZE, sizeof(local_mem_size), &local_mem_size, NULL);
+    std::cout << "Local Memory Size: " << local_mem_size / 1024 << " KB" << std::endl;
+
+    clGetDeviceInfo(device, CL_DEVICE_OPENCL_C_VERSION, sizeof(info), info, NULL);
+    std::cout << "OpenCL C Version: " << info << std::endl << std::endl;
+
     std::cout << "OpenCLWrapper Attributes:" << std::endl;
     std::cout << "  queue: " << queue << std::endl;
     std::cout << "  kernel_evolve: " << kernel_evolve << std::endl;

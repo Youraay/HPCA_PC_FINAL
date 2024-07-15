@@ -23,7 +23,7 @@ World::World(int height, int width) {
   this->width = width;
   this->N = this->height * this->width;
   this->generation = 0;
-  this->grid = new int[this->N];
+  this->grid = new bool[this->N];
   std::fill_n(this->grid, this->N, 0);
   this->cl = NULL;
   this->patterns = {'b', 'g', 'm', 't'};
@@ -73,7 +73,7 @@ World::World(std::string &file_name) {
 
   this->N = this->height * this->width;
   this->generation = 0;
-  this->grid = new int[this->N];
+  this->grid = new bool[this->N];
   std::fill_n(this->grid, this->N, 0);
   this->cl = NULL;
   this->patterns = {'b', 'g', 'm', 't'};
@@ -125,25 +125,29 @@ void World::save_gamestate(std::string file_name) {
 }
 
 // OpenCL VERSION
-int* World::evolve() {
+bool* World::evolve() {
   // Go through all cells in the current grid and determine whether they:
   // 1. Die, as if by underpopulation or overpopulation
   // 2. Continue living on to the next generation
   // 3. Come to life, as if by reproduction 
   
   // Declare new grid
-  int* newGrid = new int[this->N];
+  bool* newGrid = new bool[this->N];
+
+  cl_event write_event, kernel_event, read_event;
+  cl_ulong time_start, time_end;
+  double write_duration, kernel_duration, read_duration;
 
   // Write current grid to buffer only if it has changed
-  cl->err = clEnqueueWriteBuffer(cl->queue, cl->buffer_grid, CL_TRUE, 0, sizeof(int) * this->N, grid, 0, NULL, NULL);
+  cl->err = clEnqueueWriteBuffer(cl->queue, cl->buffer_grid, CL_TRUE, 0, sizeof(bool) * this->N, grid, 0, NULL, &write_event);
   cl->checkError(cl->err, "clEnqueueWriteBuffer");
 
 
   // Run the kernel (evolve) function using the GPU.
-  cl->err = clEnqueueNDRangeKernel(cl->queue, cl->kernel_evolve, 2, NULL, cl->evolve_global_work_size, NULL, 0, NULL, NULL);
+  cl->err = clEnqueueNDRangeKernel(cl->queue, cl->kernel_evolve, 2, NULL, cl->evolve_global_work_size, NULL, 0, NULL, &kernel_event);
   cl->checkError(cl->err, "clEnqueueNDRangeKernel");
   // Read the resulting new grid from the buffer into host memory (newGrid).
-  cl->err = clEnqueueReadBuffer(cl->queue, cl->buffer_newGrid, CL_TRUE, 0, sizeof(int) * this->N, newGrid, 0, NULL, NULL);
+  cl->err = clEnqueueReadBuffer(cl->queue, cl->buffer_newGrid, CL_TRUE, 0, sizeof(bool) * this->N, newGrid, 0, NULL, &read_event);
   cl->checkError(cl->err, "clEnqueueReadBuffer");
 
   // Overwrite old with new grid and increment generation counter.
@@ -151,14 +155,34 @@ int* World::evolve() {
   this->grid = newGrid;
   this->generation++;
 
+  // Profiling information (SEE OpenCLWrapper.cpp:25 BEFORE UNCOMMENTING)
+  /*
+  clGetEventProfilingInfo(write_event, CL_PROFILING_COMMAND_START, sizeof(time_start), &time_start, NULL);
+  clGetEventProfilingInfo(write_event, CL_PROFILING_COMMAND_END, sizeof(time_end), &time_end, NULL);
+  write_duration = (double)(time_end - time_start) / 1000000.0;
+
+  clGetEventProfilingInfo(kernel_event, CL_PROFILING_COMMAND_START, sizeof(time_start), &time_start, NULL);
+  clGetEventProfilingInfo(kernel_event, CL_PROFILING_COMMAND_END, sizeof(time_end), &time_end, NULL);
+  kernel_duration = (double)(time_end - time_start) / 1000000.0;
+
+  clGetEventProfilingInfo(read_event, CL_PROFILING_COMMAND_START, sizeof(time_start), &time_start, NULL);
+  clGetEventProfilingInfo(read_event, CL_PROFILING_COMMAND_END, sizeof(time_end), &time_end, NULL);
+  read_duration = (double)(time_end - time_start) / 1000000.0;
+
+  std::cout << "Profiling Information for evolve:\n";
+  std::cout << "Write Buffer Duration: " << write_duration << " ms\n";
+  std::cout << "Kernel Execution Duration: " << kernel_duration << " ms\n";
+  std::cout << "Read Buffer Duration: " << read_duration << " ms\n";
+  */
+
   return this->grid;
 }
 
 // SCALAR VERSION
 /*
-int* World::evolve() {
+bool* World::evolve() {
   // Declare new grid
-  int* newGrid = new int[this->N];
+  bool* newGrid = new bool[this->N];
 
   // Go through all cells in the current grid and determine whether they:
   // 1. Die, as if by underpopulation or overpopulation
@@ -232,33 +256,69 @@ void World::randomize() {
 }
 
 // OpenCL VERSION
-/*
-bool World::are_worlds_identical(int* grid_1, int* grid_2) {
+bool World::are_worlds_identical(bool* grid_1, bool* grid_2) {
   int host_result = CL_TRUE;
 
-  // Create new buffer for grid1.
-  cl->err = clEnqueueWriteBuffer(cl->queue, cl->buffer_grid1, CL_TRUE, 0, sizeof(int) * this->N, grid_1, 0, NULL, NULL);
+  cl_event write_event_1, write_event_2, write_event_result, kernel_event, read_event;
+  cl_ulong time_start, time_end;
+  double write_duration_1, write_duration_2, write_duration_result, kernel_duration, read_duration;
+
+  // Write grid_1 to buffer grid1
+  cl->err = clEnqueueWriteBuffer(cl->queue, cl->buffer_grid1, CL_TRUE, 0, sizeof(bool) * this->N, grid_1, 0, NULL, &write_event_1);
   cl->checkError(cl->err, "clEnqueueWriteBuffer (buffer_grid1)");
-  // Create new buffer for grid2.
-  cl->err = clEnqueueWriteBuffer(cl->queue, cl->buffer_grid2, CL_TRUE, 0, sizeof(int) * this->N, grid_2, 0, NULL, NULL);
+
+  // Write grid_2 to buffer grid2
+  cl->err = clEnqueueWriteBuffer(cl->queue, cl->buffer_grid2, CL_TRUE, 0, sizeof(bool) * this->N, grid_2, 0, NULL, &write_event_2);
   cl->checkError(cl->err, "clEnqueueWriteBuffer (buffer_grid2)");
-  // Write result to buffer only if it has changed
-  cl->err = clEnqueueWriteBuffer(cl->queue, cl->buffer_result, CL_TRUE, 0, sizeof(int), &host_result, 0, NULL, NULL);
+
+  // Write result to buffer result
+  cl->err = clEnqueueWriteBuffer(cl->queue, cl->buffer_result, CL_TRUE, 0, sizeof(int), &host_result, 0, NULL, &write_event_result);
   cl->checkError(cl->err, "clEnqueueWriteBuffer (buffer_result)");
 
-  // Run the kernel (compare_arrays) function using the GPU.
-  cl->err = clEnqueueNDRangeKernel(cl->queue, cl->kernel_compare, 1, NULL, cl->compare_global_work_size, NULL, 0, NULL, NULL);
+  // Run the kernel (compare_arrays) function using the GPU
+  cl->err = clEnqueueNDRangeKernel(cl->queue, cl->kernel_compare, 1, NULL, cl->compare_global_work_size, NULL, 0, NULL, &kernel_event);
   cl->checkError(cl->err, "clEnqueueNDRangeKernel");
-  // Read the result (whether they are equal or not) from the buffer into host memory (host_result).
-  cl->err = clEnqueueReadBuffer(cl->queue, cl->buffer_result, CL_TRUE, 0, sizeof(int), &host_result, 0, NULL, NULL);
+
+  // Read the result from buffer result into host memory (host_result)
+  cl->err = clEnqueueReadBuffer(cl->queue, cl->buffer_result, CL_TRUE, 0, sizeof(int), &host_result, 0, NULL, &read_event);
   cl->checkError(cl->err, "clEnqueueReadBuffer");
+
+  // Profiling information (SEE OpenCLWrapper.cpp:25 BEFORE UNCOMMENTING)
+  /*
+  clGetEventProfilingInfo(write_event_1, CL_PROFILING_COMMAND_START, sizeof(time_start), &time_start, NULL);
+  clGetEventProfilingInfo(write_event_1, CL_PROFILING_COMMAND_END, sizeof(time_end), &time_end, NULL);
+  write_duration_1 = (double)(time_end - time_start) / 1000000.0;
+
+  clGetEventProfilingInfo(write_event_2, CL_PROFILING_COMMAND_START, sizeof(time_start), &time_start, NULL);
+  clGetEventProfilingInfo(write_event_2, CL_PROFILING_COMMAND_END, sizeof(time_end), &time_end, NULL);
+  write_duration_2 = (double)(time_end - time_start) / 1000000.0;
+
+  clGetEventProfilingInfo(write_event_result, CL_PROFILING_COMMAND_START, sizeof(time_start), &time_start, NULL);
+  clGetEventProfilingInfo(write_event_result, CL_PROFILING_COMMAND_END, sizeof(time_end), &time_end, NULL);
+  write_duration_result = (double)(time_end - time_start) / 1000000.0;
+
+  clGetEventProfilingInfo(kernel_event, CL_PROFILING_COMMAND_START, sizeof(time_start), &time_start, NULL);
+  clGetEventProfilingInfo(kernel_event, CL_PROFILING_COMMAND_END, sizeof(time_end), &time_end, NULL);
+  kernel_duration = (double)(time_end - time_start) / 1000000.0;
+
+  clGetEventProfilingInfo(read_event, CL_PROFILING_COMMAND_START, sizeof(time_start), &time_start, NULL);
+  clGetEventProfilingInfo(read_event, CL_PROFILING_COMMAND_END, sizeof(time_end), &time_end, NULL);
+  read_duration = (double)(time_end - time_start) / 1000000.0;
+
+  std::cout << "Profiling Information for are_worlds_identical:\n";
+  std::cout << "Write Buffer 1 Duration: " << write_duration_1 << " ms\n";
+  std::cout << "Write Buffer 2 Duration: " << write_duration_2 << " ms\n";
+  std::cout << "Write Buffer Result Duration: " << write_duration_result << " ms\n";
+  std::cout << "Kernel Execution Duration: " << kernel_duration << " ms\n";
+  std::cout << "Read Buffer Duration: " << read_duration << " ms\n";
+  */
 
   return (bool)host_result;
 }
-*/
 
 // OpenMP + Vc VERSION
-bool World::are_worlds_identical(int* grid_1, int* grid_2) {
+/*
+bool World::are_worlds_identical(bool* grid_1, bool* grid_2) {
   // Create a flag to indicate if the worlds are identical
   bool identical = true;
   // Some helping varibales
@@ -294,11 +354,11 @@ bool World::are_worlds_identical(int* grid_1, int* grid_2) {
 
   return identical;
 }
-
+*/
 
 // SCALAR VERSION
 /*
-bool World::are_worlds_identical(int* grid_1, int* grid_2) {
+bool World::are_worlds_identical(bool* grid_1, bool* grid_2) {
   // Compare each cell in both worlds
   for (int i = 0; i < height; i++) {
     for (int j = 0; j < width; j++) {

@@ -56,7 +56,7 @@ public:
 
     void checkError(cl_int err, const char* operation);
 
-    void printAttributes();
+    void printAttributes(cl_platform_id platform, cl_device_id device);
 
 private:
     

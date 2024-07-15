@@ -1,5 +1,5 @@
-__kernel void evolve(const __global int* grid,
-                     __global int* newGrid,
+__kernel void evolve(const __global bool* grid,
+                     __global bool* newGrid,
                      int width, int height) {
   int x = get_global_id(0);
   int y = get_global_id(1);
@@ -27,8 +27,8 @@ __kernel void evolve(const __global int* grid,
 }
 
 
-__kernel void compare_arrays(const __global int* array1,
-                             const __global int* array2,
+__kernel void compare_arrays(const __global bool* array1,
+                             const __global bool* array2,
                              __global int* result, ulong size) {
   if (result) {
     int index = get_global_id(0);
