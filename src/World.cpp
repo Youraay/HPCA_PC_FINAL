@@ -176,6 +176,7 @@ bool* World::evolve() {
   return this->grid;
 }
 
+
 // SCALAR VERSION
 /*
 bool* World::evolve() {
@@ -219,6 +220,7 @@ bool* World::evolve() {
   return this->grid;
 }
 */
+
 
 void World::randomize() {
   // seed random number generator with current time
@@ -315,6 +317,7 @@ bool World::are_worlds_identical(bool* grid_1, bool* grid_2) {
 }
 
 
+
 // SCALAR VERSION
 /*
 bool World::are_worlds_identical(bool* grid_1, bool* grid_2) {
@@ -331,6 +334,7 @@ bool World::are_worlds_identical(bool* grid_1, bool* grid_2) {
   return true;
 }
 */
+
 
 
 int World::get_cell_state(int y, int x) {

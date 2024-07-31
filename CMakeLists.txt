@@ -27,7 +27,7 @@ set(SOURCES
 add_executable(GameOfLife ${SOURCES})
 
 # Link against Vc library
-target_link_libraries(GameOfLife $ENV{HOME}/usr/lib64/libOpenCL.so.1)
+target_link_libraries(GameOfLife /usr/lib64/libOpenCL.so.1)
 
 
 
